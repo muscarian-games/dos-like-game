@@ -48,45 +48,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define screenHeight 200
 #define texWidth 16 // must be power of two
 #define texHeight 16 // must be power of two
-#define mapWidth 24
-#define mapHeight 24
+#define mapWidth 10
+#define mapHeight 10
 
 // TODO: Generate worldmaps per floor
 // TODO: Avoid using floor/ceiling textures for walls
 // Zero (0) is the floor, and the rest are walls.
 // Texture for walls decided by subtracting 1 from the value.
+// 10 x 10 mazelike grid:
 int worldMap[mapWidth][mapHeight] =
 {
-  {8,8,8,8,8,8,8,8,8,8,8,3,3,6,3,3,6,3,6,3,3,3,6,3},
-  {8,0,0,0,0,0,0,0,0,0,8,3,0,0,0,0,0,0,0,0,0,0,0,3},
-  {8,0,3,3,0,0,0,0,0,8,8,3,0,0,0,0,0,0,0,0,0,0,0,6},
-  {8,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6},
-  {8,0,3,3,0,0,0,0,0,8,8,3,0,0,0,0,0,0,0,0,0,0,0,3},
-  {8,0,0,0,0,0,0,0,0,0,8,3,0,0,0,0,0,6,6,6,0,6,3,6},
-  {8,8,8,8,0,8,8,8,8,8,8,3,3,3,3,3,3,6,0,0,0,0,0,6},
-  {7,7,7,7,0,7,7,7,7,0,8,0,8,0,8,0,8,3,0,3,0,6,0,6},
-  {7,7,0,0,0,0,0,0,7,8,0,8,0,8,0,8,8,6,0,0,0,0,0,6},
-  {7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,6,0,0,0,0,0,3},
-  {7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,6,0,6,0,6,0,6},
-  {7,7,0,0,0,0,0,0,7,8,0,8,0,8,0,8,8,6,3,6,0,6,6,6},
-  {7,7,7,7,0,7,7,7,7,8,8,3,0,6,8,3,8,3,3,3,0,3,3,3},
-  {3,3,3,3,0,3,3,3,3,3,6,3,0,0,6,0,6,3,0,0,0,0,0,3},
-  {3,3,0,0,0,0,0,3,3,3,0,0,0,0,0,0,3,3,0,0,0,0,0,3},
-  {3,0,0,0,0,0,0,0,3,3,0,0,0,0,0,0,3,3,0,0,0,0,0,3},
-  {1,0,0,0,0,0,0,0,1,3,3,3,3,3,6,0,6,3,3,0,0,0,3,3},
-  {3,0,0,0,0,0,0,0,3,3,3,1,3,3,3,6,6,0,0,5,0,5,0,5},
-  {3,3,0,0,0,0,0,3,3,3,0,0,0,3,3,0,5,0,5,0,0,0,5,5},
-  {3,0,0,0,0,0,0,0,3,0,0,0,0,0,3,5,0,5,0,5,0,5,0,5},
-  {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5},
-  {3,0,0,0,0,0,0,0,3,0,0,0,0,0,3,5,0,5,0,5,0,5,0,5},
-  {3,3,0,0,0,0,0,3,3,3,0,0,0,3,3,0,5,0,5,0,0,0,5,5},
-  {3,3,3,3,1,3,3,3,3,3,3,1,3,3,3,5,5,5,5,5,5,5,5,5}
+  {3,3,3,3,3,3,3,3,3,3},
+  {3,0,0,0,2,0,1,1,1,3},
+  {3,0,0,0,0,0,0,0,0,3},
+  {3,1,0,1,1,1,1,1,1,3},
+  {3,1,0,0,0,1,0,0,0,3},
+  {3,1,0,1,0,1,0,1,1,3},
+  {3,1,0,1,0,1,0,0,1,3},
+  {3,1,0,1,0,1,1,0,1,3},
+  {3,1,0,0,0,0,0,0,1,3},
+  {3,3,3,3,3,3,3,3,3,3}
 };
 
 typedef struct Sprite
 {
   double x;
-  double y;
+  double y; // is y=0 top left or?
   int texture;
   int frames;
 } Sprite;
@@ -95,8 +82,20 @@ typedef struct Sprite
 
 Sprite sprite[numSprites] =
 {
-  {20.5, 11.5, 8, 2}
+  {5.5, 6.5, 6, 2} // Worm enemy
 };
+
+typedef struct Enemy 
+{
+  int health;
+  int damage;
+  int state;
+  int movementRange; // moves to player when player in range
+  int movementSpeed; // how many ms to move 1 pixel
+  int attackCooldown; // how long in ms between attacks
+  int attackSpeed; // how long in ms between attack telegraph (frame 2) and actual attack
+  int spriteTexture; // used to grab this enemy's struct when iterating sprites, so the relationship is Sprite->Enemy
+} Enemy;
 
 //1D Zbuffer
 double ZBuffer[screenWidth];
@@ -111,48 +110,36 @@ void sortSprites(int* order, double* dist, int amount);
 double dmax( double a, double b ) { return a > b ? a : b; }
 double dmin( double a, double b ) { return a < b ? a : b; }
 
-void set_textures(uint8_t* texture[10], uint8_t* darktexture[11], int tw, int th, int palcount, uint8_t palette[768]) 
+int floor1 = 3;
+int floor2 = 4;
+int ceilingTexture = 5;
+int numTextures = 8;
+
+void set_textures(uint8_t* texture[numTextures], int tw, int th, int palcount, uint8_t palette[768]) 
 {
   texture[0] = loadgif( "files/meniskos/brick-wall-mono.gif", &tw, &th, &palcount, palette );
-  texture[1] = loadgif( "files/meniskos/brick-wall-mono.gif", &tw, &th, &palcount, palette );
-  texture[2] = loadgif( "files/meniskos/wood-wall-mono.gif", &tw, &th, &palcount, palette );
+  texture[1] = loadgif( "files/meniskos/wood-wall-mono.gif", &tw, &th, &palcount, palette );
+  texture[2] = loadgif( "files/meniskos/brick-wall-pillar-mono.gif", &tw, &th, &palcount, palette );
   texture[3] = loadgif( "files/meniskos/brick-floor-mono.gif", &tw, &th, &palcount, palette ); // floor 1
   texture[4] = loadgif( "files/meniskos/brick-floor-mono-2.gif", &tw, &th, &palcount, palette ); // floor 2
-  texture[5] = loadgif( "files/meniskos/brick-wall-pillar-mono.gif", &tw, &th, &palcount, palette );
-  texture[6] = loadgif( "files/meniskos/brick-ceiling-mono.gif", &tw, &th, &palcount, palette ); // ceiling
-  texture[7] = loadgif( "files/meniskos/brick-wall-pillar-mono.gif", &tw, &th, &palcount, palette );
-
-  // TODO: dark textures
-  darktexture[0] = loadgif( "files/meniskos/brick-wall-mono.gif", &tw, &th, &palcount, palette );
-  darktexture[1] = loadgif( "files/meniskos/brick-wall-mono.gif", &tw, &th, &palcount, palette );
-  darktexture[2] = loadgif( "files/meniskos/wood-wall-mono.gif", &tw, &th, &palcount, palette );
-  darktexture[3] = loadgif( "files/meniskos/brick-floor-mono.gif", &tw, &th, &palcount, palette );
-  darktexture[4] = loadgif( "files/meniskos/brick-floor-mono-2.gif", &tw, &th, &palcount, palette );
-  darktexture[5] = loadgif( "files/meniskos/brick-wall-pillar-mono.gif", &tw, &th, &palcount, palette );
-  darktexture[6] = loadgif( "files/meniskos/brick-ceiling-mono.gif", &tw, &th, &palcount, palette );
-  darktexture[7] = loadgif( "files/meniskos/brick-wall-pillar-mono.gif", &tw, &th, &palcount, palette );
+  texture[5] = loadgif( "files/meniskos/brick-ceiling-mono.gif", &tw, &th, &palcount, palette ); // ceiling
 
   // load some mobile sprite textures
-  texture[8] = loadgif( "files/meniskos/worm_01.gif", &tw, &th, &palcount, palette );
-  texture[9] = loadgif( "files/meniskos/worm_02.gif", &tw, &th, &palcount, palette );
-
-  //TODO: mobile sprites
-  //TODO: UI sprites
-  //TODO: weapon sprites
-
+  texture[6] = loadgif( "files/meniskos/worm_01.gif", &tw, &th, &palcount, palette );
+  texture[7] = loadgif( "files/meniskos/worm_02.gif", &tw, &th, &palcount, palette );
 }
 
 int main(int argc, char* argv[])
 {
   (void) argc, (void) argv;
-  double posX = 22.0, posY = 11.5; //x and y start position
-  double dirX = -1.0, dirY = 0.0; //initial direction vector
+  //TODO: Allow position to be set from level data
+  double posX = 3.5, posY = 3.5; // x and y start position, starting from (???) -- i think x,y is top left, let us start player in top right always to prevent weird look dir
+  double dirX = -1.0, dirY = 0.0; // initial direction vector -- this can be messed with to fuck up player perspective but doesn't really change just the look dir... :|
   double planeX = 0.0, planeY = 0.66; //the 2d raycaster version of camera plane
   double pitch = 0; // looking up/down, expressed in screen pixels the horizon shifts
   double posZ = 0; // vertical camera strafing up/down, for jumping/crouching. 0 means standard height. Expressed in screen pixels a wall at distance 1 shifts
 
-  uint8_t* texture[11];
-  uint8_t* darktexture[11];
+  uint8_t* texture[numTextures];
 
   setvideomode( videomode_320x200 );
   int w = 320;
@@ -163,7 +150,7 @@ int main(int argc, char* argv[])
   int tw, th, palcount;
   uint8_t palette[ 768 ];
 
-  set_textures(texture, darktexture, tw, th, palcount, palette);
+  set_textures(texture, tw, th, palcount, palette);
   
   for( int i = 0; i < palcount; ++i ) {
       setpal(i, palette[ 3 * i + 0 ], palette[ 3 * i + 1 ], palette[ 3 * i + 2 ] );
@@ -239,20 +226,17 @@ int main(int argc, char* argv[])
         // choose texture and draw the pixel
         int checkerBoardPattern = ((int)(cellX + cellY)) & 1;
         int floorTexture;
-        if (checkerBoardPattern == 0) floorTexture = 3;
-        else floorTexture = 4;
-        int ceilingTexture = 6;
+        if (checkerBoardPattern == 0) floorTexture = floor1;
+        else floorTexture = floor2;
         uint32_t color;
 
         if(is_floor) {
           // floor - get pixel
-          color = darktexture[floorTexture][texWidth * ty + tx];
-          color = (color >> 1) & 8355711; // make a bit darker than walls
+          color = texture[floorTexture][texWidth * ty + tx];
           buffer[ x + w * y ] = (uint8_t)color;
         } else {
           // ceiling - get pixel
-          color = darktexture[ceilingTexture][texWidth * ty + tx];
-          color = (color >> 1) & 8355711; // make a bit darker than walls
+          color = texture[ceilingTexture][texWidth * ty + tx];
           buffer[ x + w * y ] = (uint8_t)color;
         }
       }
@@ -364,7 +348,7 @@ int main(int argc, char* argv[])
         // Cast the texture coordinate to integer, and mask with (texHeight - 1) in case of overflow
         int texY = (int)texPos & (texHeight - 1);
         texPos += step;
-        uint32_t color = (side == 1 ? darktexture : texture )[texNum][texHeight * texY + texX];
+        uint32_t color = texture[texNum][texHeight * texY + texX];
         //make color darker for y-sides: R, G and B byte each divided through two with a "shift" and an "and"
         if(side == 1) color = (color >> 1) & 8355711;
         buffer[ x + w * y ] = (uint8_t)color;
@@ -421,7 +405,7 @@ int main(int argc, char* argv[])
         floorTexX = (int)(currentFloorX * texWidth) & (texWidth - 1);
         floorTexY = (int)(currentFloorY * texHeight) & (texHeight - 1);
 
-        buffer[ x + w * y ] = darktexture[6][texWidth * floorTexY + floorTexX];
+        buffer[ x + w * y ] = texture[ceilingTexture][texWidth * floorTexY + floorTexX];
       }
 
       //draw the floor from drawEnd to the bottom of the screen
@@ -443,7 +427,7 @@ int main(int argc, char* argv[])
         if(checkerBoardPattern == 0) floorTexture = 3;
         else floorTexture = 4;
 
-        buffer[ x + w * y ] = (darktexture[floorTexture][texWidth * floorTexY + floorTexX] >> 1) & 8355711;
+        buffer[ x + w * y ] = (texture[floorTexture][texWidth * floorTexY + floorTexX] >> 1) & 8355711;
       }
 #endif // !FLOOR_HORIZONTAL
     }
