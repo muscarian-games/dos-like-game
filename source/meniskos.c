@@ -111,7 +111,7 @@ void sortSprites(int* order, double* dist, int amount);
 double dmax( double a, double b ) { return a > b ? a : b; }
 double dmin( double a, double b ) { return a < b ? a : b; }
 
-void set_textures(uint8_t* texture[11], uint8_t* darktexture[11], int tw, int th, int palcount, uint8_t palette[768]) 
+void set_textures(uint8_t* texture[10], uint8_t* darktexture[11], int tw, int th, int palcount, uint8_t palette[768]) 
 {
   texture[0] = loadgif( "files/meniskos/brick-wall-mono.gif", &tw, &th, &palcount, palette );
   texture[1] = loadgif( "files/meniskos/brick-wall-mono.gif", &tw, &th, &palcount, palette );
@@ -135,8 +135,6 @@ void set_textures(uint8_t* texture[11], uint8_t* darktexture[11], int tw, int th
   // load some mobile sprite textures
   texture[8] = loadgif( "files/meniskos/worm_01.gif", &tw, &th, &palcount, palette );
   texture[9] = loadgif( "files/meniskos/worm_02.gif", &tw, &th, &palcount, palette );
-
-  texture[10] = loadgif( "files/raycast/greenlight.gif", &tw, &th, &palcount, palette );
 
   //TODO: mobile sprites
   //TODO: UI sprites
@@ -286,8 +284,8 @@ int main(int argc, char* argv[])
       int stepX;
       int stepY;
 
-      int hit = 0; //was there a wall hit?
-      int side = 0; //was a NS or a EW wall hit?
+      int hit = 0; // was there a wall hit?
+      int side = 0; // was a NS or a EW wall hit?
 
       // calculate step and initial sideDist
       if(rayDirX < 0)
@@ -313,7 +311,7 @@ int main(int argc, char* argv[])
       //perform DDA
       while (hit == 0)
       {
-        //jump to next map square, either in x-direction, or in y-direction
+        // jump to next map square, either in x-direction, or in y-direction
         if(sideDistX < sideDistY)
         {
           sideDistX += deltaDistX;
@@ -368,7 +366,7 @@ int main(int argc, char* argv[])
         texPos += step;
         uint32_t color = (side == 1 ? darktexture : texture )[texNum][texHeight * texY + texX];
         //make color darker for y-sides: R, G and B byte each divided through two with a "shift" and an "and"
-        //if(side == 1) color = (color >> 1) & 8355711;
+        if(side == 1) color = (color >> 1) & 8355711;
         buffer[ x + w * y ] = (uint8_t)color;
       }
 
@@ -514,7 +512,6 @@ int main(int argc, char* argv[])
           int d = (y-vMoveScreen) * 256 - h * 128 + spriteHeight * 128; //256 and 128 factors to avoid floats
           int texY = ((d * texHeight) / spriteHeight) / 256;
           uint32_t color = texture[sprite[spriteOrder[i]].texture][texWidth * texY + texX]; // get current color from the texture
-
           if ((color & 0x00FFFFFF) != 0) buffer[ stripe + w * y ] = (uint8_t)color; // paint pixel if it isn't black, black is the invisible color
         }
       }
