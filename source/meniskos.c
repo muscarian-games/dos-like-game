@@ -88,36 +88,14 @@ typedef struct Sprite
   double x;
   double y;
   int texture;
+  int frames;
 } Sprite;
 
-#define numSprites 0
+#define numSprites 1
 
 Sprite sprite[numSprites] =
 {
-  // {20.5, 11.5, 10}, //green light in front of playerstart
-  // //green lights in every room
-  // {18.5,4.5, 10},
-  // {10.0,4.5, 10},
-  // {10.0,12.5,10},
-  // {2.5, 6.5, 10},
-  // {2.5, 20.5,10},
-  // {2.5, 14.5,10},
-  // {14.5,20.5,10},
-
-  // //row of pillars in front of wall: fisheye test
-  // {18.5, 10.5, 9},
-  // {18.5, 11.5, 9},
-  // {18.5, 12.5, 9},
-
-  // //some barrels around the map
-  // {21.5, 1.5, 8},
-  // {15.5, 1.5, 8},
-  // {16.0, 1.8, 8},
-  // {16.2, 1.2, 8},
-  // {3.5,  2.5, 8},
-  // {9.5, 15.5, 8},
-  // {10.0, 15.1,8},
-  // {10.5, 15.8,8},
+  {20.5, 11.5, 8, 2}
 };
 
 //1D Zbuffer
@@ -132,6 +110,39 @@ void sortSprites(int* order, double* dist, int amount);
 
 double dmax( double a, double b ) { return a > b ? a : b; }
 double dmin( double a, double b ) { return a < b ? a : b; }
+
+void set_textures(uint8_t* texture[11], uint8_t* darktexture[11], int tw, int th, int palcount, uint8_t palette[768]) 
+{
+  texture[0] = loadgif( "files/meniskos/brick-wall-mono.gif", &tw, &th, &palcount, palette );
+  texture[1] = loadgif( "files/meniskos/brick-wall-mono.gif", &tw, &th, &palcount, palette );
+  texture[2] = loadgif( "files/meniskos/wood-wall-mono.gif", &tw, &th, &palcount, palette );
+  texture[3] = loadgif( "files/meniskos/brick-floor-mono.gif", &tw, &th, &palcount, palette ); // floor 1
+  texture[4] = loadgif( "files/meniskos/brick-floor-mono-2.gif", &tw, &th, &palcount, palette ); // floor 2
+  texture[5] = loadgif( "files/meniskos/brick-wall-pillar-mono.gif", &tw, &th, &palcount, palette );
+  texture[6] = loadgif( "files/meniskos/brick-ceiling-mono.gif", &tw, &th, &palcount, palette ); // ceiling
+  texture[7] = loadgif( "files/meniskos/brick-wall-pillar-mono.gif", &tw, &th, &palcount, palette );
+
+  // TODO: dark textures
+  darktexture[0] = loadgif( "files/meniskos/brick-wall-mono.gif", &tw, &th, &palcount, palette );
+  darktexture[1] = loadgif( "files/meniskos/brick-wall-mono.gif", &tw, &th, &palcount, palette );
+  darktexture[2] = loadgif( "files/meniskos/wood-wall-mono.gif", &tw, &th, &palcount, palette );
+  darktexture[3] = loadgif( "files/meniskos/brick-floor-mono.gif", &tw, &th, &palcount, palette );
+  darktexture[4] = loadgif( "files/meniskos/brick-floor-mono-2.gif", &tw, &th, &palcount, palette );
+  darktexture[5] = loadgif( "files/meniskos/brick-wall-pillar-mono.gif", &tw, &th, &palcount, palette );
+  darktexture[6] = loadgif( "files/meniskos/brick-ceiling-mono.gif", &tw, &th, &palcount, palette );
+  darktexture[7] = loadgif( "files/meniskos/brick-wall-pillar-mono.gif", &tw, &th, &palcount, palette );
+
+  // load some mobile sprite textures
+  texture[8] = loadgif( "files/meniskos/worm_01.gif", &tw, &th, &palcount, palette );
+  texture[9] = loadgif( "files/meniskos/worm_02.gif", &tw, &th, &palcount, palette );
+
+  texture[10] = loadgif( "files/raycast/greenlight.gif", &tw, &th, &palcount, palette );
+
+  //TODO: mobile sprites
+  //TODO: UI sprites
+  //TODO: weapon sprites
+
+}
 
 int main(int argc, char* argv[])
 {
@@ -153,42 +164,16 @@ int main(int argc, char* argv[])
   // load some textures
   int tw, th, palcount;
   uint8_t palette[ 768 ];
-  texture[0] = loadgif( "files/meniskos/brick-wall-mono.gif", &tw, &th, &palcount, palette );
-  texture[1] = loadgif( "files/meniskos/brick-wall-mono.gif", &tw, &th, &palcount, palette );
-  texture[2] = loadgif( "files/meniskos/wood-wall-mono.gif", &tw, &th, &palcount, palette );
-  texture[3] = loadgif( "files/meniskos/brick-floor-mono.gif", &tw, &th, &palcount, palette ); // floor 1
-  texture[4] = loadgif( "files/meniskos/brick-floor-mono-2.gif", &tw, &th, &palcount, palette ); // floor 2
-  texture[5] = loadgif( "files/meniskos/brick-wall-pillar-mono.gif", &tw, &th, &palcount, palette );
-  texture[6] = loadgif( "files/meniskos/brick-ceiling-mono.gif", &tw, &th, &palcount, palette ); // ceiling
-  texture[7] = loadgif( "files/meniskos/brick-wall-pillar-mono.gif", &tw, &th, &palcount, palette );
 
-  // TODO: dark textures
-  darktexture[0] = loadgif( "files/meniskos/brick-wall-mono.gif", &tw, &th, &palcount, palette );
-  darktexture[1] = loadgif( "files/meniskos/brick-wall-mono.gif", &tw, &th, &palcount, palette );
-  darktexture[2] = loadgif( "files/meniskos/wood-wall-mono.gif", &tw, &th, &palcount, palette );
-  darktexture[3] = loadgif( "files/meniskos/brick-floor-mono.gif", &tw, &th, &palcount, palette );
-  darktexture[4] = loadgif( "files/meniskos/brick-floor-mono-2.gif", &tw, &th, &palcount, palette );
-  darktexture[5] = loadgif( "files/meniskos/brick-wall-pillar-mono.gif", &tw, &th, &palcount, palette );
-  darktexture[6] = loadgif( "files/meniskos/brick-ceiling-mono.gif", &tw, &th, &palcount, palette );
-  darktexture[7] = loadgif( "files/meniskos/brick-wall-pillar-mono.gif", &tw, &th, &palcount, palette );
-
-  // TODO: object sprites
-  //load some sprite textures
-  texture[8] = loadgif( "files/raycast/barrel.gif", &tw, &th, &palcount, palette );
-  texture[9] = loadgif( "files/raycast/pillar.gif", &tw, &th, &palcount, palette );
-  texture[10] = loadgif( "files/raycast/greenlight.gif", &tw, &th, &palcount, palette );
-
-  //TODO: mobile sprites
-  //TODO: UI sprites
-  //TODO: weapon sprites
-
+  set_textures(texture, darktexture, tw, th, palcount, palette);
+  
   for( int i = 0; i < palcount; ++i ) {
       setpal(i, palette[ 3 * i + 0 ], palette[ 3 * i + 1 ], palette[ 3 * i + 2 ] );
   }
 
-   uint8_t* buffer = screenbuffer();
+  uint8_t* buffer = screenbuffer();
 
-  //start the main loop
+  // start the main loop
   while(!shuttingdown())
   {
     waitvbl();
@@ -256,21 +241,20 @@ int main(int argc, char* argv[])
         // choose texture and draw the pixel
         int checkerBoardPattern = ((int)(cellX + cellY)) & 1;
         int floorTexture;
-        if(checkerBoardPattern == 0) floorTexture = 3;
+        if (checkerBoardPattern == 0) floorTexture = 3;
         else floorTexture = 4;
         int ceilingTexture = 6;
         uint32_t color;
 
-
         if(is_floor) {
-          // floor
+          // floor - get pixel
           color = darktexture[floorTexture][texWidth * ty + tx];
-          //color = (color >> 1) & 8355711; // make a bit darker
+          color = (color >> 1) & 8355711; // make a bit darker than walls
           buffer[ x + w * y ] = (uint8_t)color;
         } else {
-          //ceiling
+          // ceiling - get pixel
           color = darktexture[ceilingTexture][texWidth * ty + tx];
-          //color = (color >> 1) & 8355711; // make a bit darker
+          color = (color >> 1) & 8355711; // make a bit darker than walls
           buffer[ x + w * y ] = (uint8_t)color;
         }
       }
@@ -280,32 +264,32 @@ int main(int argc, char* argv[])
     // WALL CASTING
     for(int x = 0; x < w; x++)
     {
-      //calculate ray position and direction
-      double cameraX = 2 * x / (double)(w) - 1; //x-coordinate in camera space
+      // calculate ray position and direction
+      double cameraX = 2 * x / (double)(w) - 1; // x-coordinate in camera space
       double rayDirX = dirX + planeX * cameraX;
       double rayDirY = dirY + planeY * cameraX;
 
-      //which box of the map we're in
+      // which box of the map we're in
       int mapX = (int)(posX);
       int mapY = (int)(posY);
 
-      //length of ray from current position to next x or y-side
+      // length of ray from current position to next x or y-side
       double sideDistX;
       double sideDistY;
 
-      //length of ray from one x or y-side to next x or y-side
+      // length of ray from one x or y-side to next x or y-side
       double deltaDistX = (rayDirX == 0) ? 1e30 : fabs(1 / rayDirX);
       double deltaDistY = (rayDirY == 0) ? 1e30 : fabs(1 / rayDirY);
       double perpWallDist;
 
-      //what direction to step in x or y-direction (either +1 or -1)
+      // what direction to step in x or y-direction (either +1 or -1)
       int stepX;
       int stepY;
 
       int hit = 0; //was there a wall hit?
       int side = 0; //was a NS or a EW wall hit?
 
-      //calculate step and initial sideDist
+      // calculate step and initial sideDist
       if(rayDirX < 0)
       {
         stepX = -1;
@@ -342,18 +326,18 @@ int main(int argc, char* argv[])
           mapY += stepY;
           side = 1;
         }
-        //Check if ray has hit a wall
+        // Check if ray has hit a wall
         if(worldMap[mapX][mapY] > 0) hit = 1;
       }
 
-      //Calculate distance of perpendicular ray (Euclidean distance would give fisheye effect!)
+      // Calculate distance of perpendicular ray (Euclidean distance would give fisheye effect!)
       if(side == 0) perpWallDist = (sideDistX - deltaDistX);
       else          perpWallDist = (sideDistY - deltaDistY);
 
-      //Calculate height of line to draw on screen
+      // Calculate height of line to draw on screen
       int lineHeight = (int)(h / perpWallDist);
 
-      //calculate lowest and highest pixel to fill in current stripe
+      // calculate lowest and highest pixel to fill in current stripe
       int drawStart = (int)( -lineHeight / 2 + h / 2 + pitch + (posZ / perpWallDist) );
       if(drawStart < 0) drawStart = 0;
       int drawEnd = (int)( lineHeight / 2 + h / 2 + pitch + (posZ / perpWallDist) );
@@ -361,7 +345,7 @@ int main(int argc, char* argv[])
       //texturing calculations
       int texNum = worldMap[mapX][mapY] - 1; //1 subtracted from it so that texture 0 can be used!
 
-      //calculate value of wallX
+      // calculate value of wallX
       double wallX; //where exactly the wall was hit
       if(side == 0) wallX = posY + perpWallDist * rayDirY;
       else          wallX = posX + perpWallDist * rayDirX;
@@ -392,7 +376,7 @@ int main(int argc, char* argv[])
       ZBuffer[x] = perpWallDist; //perpendicular distance is used
 
 #if !FLOOR_HORIZONTAL
-      //FLOOR CASTING
+      //FLOOR CASTING -- this variation is unused, I think
       double floorXWall, floorYWall; //x, y position of the floor texel at the bottom of the wall
 
       //4 different wall directions possible
@@ -466,8 +450,8 @@ int main(int argc, char* argv[])
 #endif // !FLOOR_HORIZONTAL
     }
 
-    //SPRITE CASTING
-    //sort sprites from far to close
+    // SPRITE CASTING
+    // sort sprites from far to close
     for(int i = 0; i < numSprites; i++)
     {
       spriteOrder[i] = i;
@@ -494,43 +478,44 @@ int main(int argc, char* argv[])
 
       int spriteScreenX = (int)((w / 2) * (1 + transformX / transformY));
 
-      //parameters for scaling and moving the sprites
+      // parameters for scaling and moving the sprites
       #define uDiv 1
       #define vDiv 1
       #define vMove 0.0
       int vMoveScreen = (int)( (int)(vMove / transformY) + pitch + posZ / transformY );
 
-      //calculate height of the sprite on screen
+      // calculate height of the sprite on screen
       int spriteHeight = abs((int)(h / (transformY))) / vDiv; //using "transformY" instead of the real distance prevents fisheye
-      //calculate lowest and highest pixel to fill in current stripe
+      // calculate lowest and highest pixel to fill in current stripe
       int drawStartY = -spriteHeight / 2 + h / 2 + vMoveScreen;
       if(drawStartY < 0) drawStartY = 0;
       int drawEndY = spriteHeight / 2 + h / 2 + vMoveScreen;
       if(drawEndY >= h) drawEndY = h - 1;
 
-      //calculate width of the sprite
+      // calculate width of the sprite
       int spriteWidth = abs( (int)(h / (transformY))) / uDiv;
       int drawStartX = -spriteWidth / 2 + spriteScreenX;
       if(drawStartX < 0) drawStartX = 0;
       int drawEndX = spriteWidth / 2 + spriteScreenX;
-      if(drawEndX >= w) drawEndX = w - 1;
+      if (drawEndX >= w) drawEndX = w - 1;
 
-      //loop through every vertical stripe of the sprite on screen
+      // loop through every vertical stripe of the sprite on screen
       for(int stripe = drawStartX; stripe < drawEndX; stripe++)
       {
         int texX = (int)(256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * texWidth / spriteWidth) / 256;
-        //the conditions in the if are:
-        //1) it's in front of camera plane so you don't see things behind you
-        //2) it's on the screen (left)
-        //3) it's on the screen (right)
-        //4) ZBuffer, with perpendicular distance
+        // the conditions in the if are:
+        // 1) it's in front of camera plane so you don't see things behind you
+        // 2) it's on the screen (left)
+        // 3) it's on the screen (right)
+        // 4) ZBuffer, with perpendicular distance
         if(transformY > 0 && stripe > 0 && stripe < w && transformY < ZBuffer[stripe])
-        for(int y = drawStartY; y < drawEndY; y++) //for every pixel of the current stripe
+        for(int y = drawStartY; y < drawEndY; y++) // for every pixel of the current stripe
         {
           int d = (y-vMoveScreen) * 256 - h * 128 + spriteHeight * 128; //256 and 128 factors to avoid floats
           int texY = ((d * texHeight) / spriteHeight) / 256;
-          uint32_t color = texture[sprite[spriteOrder[i]].texture][texWidth * texY + texX]; //get current color from the texture
-          if((color & 0x00FFFFFF) != 0) buffer[ stripe + w * y ] = (uint8_t)color; //paint pixel if it isn't black, black is the invisible color
+          uint32_t color = texture[sprite[spriteOrder[i]].texture][texWidth * texY + texX]; // get current color from the texture
+
+          if ((color & 0x00FFFFFF) != 0) buffer[ stripe + w * y ] = (uint8_t)color; // paint pixel if it isn't black, black is the invisible color
         }
       }
     }
