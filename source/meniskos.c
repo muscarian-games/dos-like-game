@@ -97,6 +97,27 @@ typedef struct Enemy
   int spriteTexture; // used to grab this enemy's struct when iterating sprites, so the relationship is Sprite->Enemy
 } Enemy;
 
+
+typedef enum GameStateType { 
+  MENU, 
+  PLAYING, 
+  PAUSED, 
+  GAMEOVER, 
+  WIN 
+} GameStateType;
+
+typedef struct GameState 
+{
+  GameStateType state;
+  int level;
+  int score;
+  int health;
+  int stamina;
+} GameState;
+
+const GameStateType startingState = MENU;
+GameState state = { startingState, 0, 0, 100, 100 };
+
 //1D Zbuffer
 double ZBuffer[screenWidth];
 
@@ -133,7 +154,7 @@ int main(int argc, char* argv[])
 {
   (void) argc, (void) argv;
   //TODO: Allow position to be set from level data
-  double posX = 3.5, posY = 3.5; // x and y start position, starting from (???) -- i think x,y is top left, let us start player in top right always to prevent weird look dir
+  double posX = 4.0, posY = 3.5; // x and y start position, starting from (???) -- i think x,y is top left, let us start player in top right always to prevent weird look dir
   double dirX = -1.0, dirY = 0.0; // initial direction vector -- this can be messed with to fuck up player perspective but doesn't really change just the look dir... :|
   double planeX = 0.0, planeY = 0.66; //the 2d raycaster version of camera plane
   double pitch = 0; // looking up/down, expressed in screen pixels the horizon shifts
