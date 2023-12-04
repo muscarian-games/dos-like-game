@@ -68,21 +68,6 @@ int worldMap[mapWidth][mapHeight] =
   {3,3,3,3,3,3,3,3,3,3}
 };
 
-typedef struct Sprite
-{
-  double x;
-  double y; // is y=0 top left or?
-  int texture;
-  int frames;
-} Sprite;
-
-#define numSprites 1
-
-Sprite sprite[numSprites] =
-{
-  {5.5, 6.5, 6, 2} // Worm enemy
-};
-
 typedef enum GameStateType { 
   MENU, 
   PLAYING, 
@@ -103,6 +88,22 @@ typedef struct GameState
 const GameStateType startingState = MENU;
 GameState state = { startingState, 0, 0, 100, 100 };
 
+typedef struct Sprite
+{
+  double x;
+  double y; // is y=0 top left or?
+  int texture;
+  int frames;
+  int id;
+} Sprite;
+
+#define numSprites 1
+
+Sprite sprite[numSprites] =
+{
+  {5.5, 6.5, 6, 2, 1} // Worm enemy
+};
+
 typedef struct Enemy 
 {
   int health;
@@ -113,7 +114,7 @@ typedef struct Enemy
   double attackRange; // attacks player when player in range, in tiles
   int attackCooldown; // how long in frames between attacks
   int attackSpeed; // how long in frames between attack telegraph (frame 2 of gif) and actual attack
-  int spriteIndex; // used to grab this enemy's struct when iterating sprites, so the relationship is Sprite->Enemy
+  int spriteId; // used to grab this enemy's struct when iterating sprites, so the relationship is Sprite->Enemy
 } Enemy;
 
 typedef enum EnemyStateType {
@@ -125,8 +126,8 @@ typedef enum EnemyStateType {
 
 const int numEnemies = 1;
 
-Enemy enemy[1] = {
-  { 100, 10, IDLE, 4.0, 12, 1.0, 60, 30, 0 }
+Enemy enemies[1] = {
+  { 100, 10, IDLE, 4.0, 12, 1.0, 60, 30, 1 }
 };
 
 //1D Zbuffer
@@ -467,23 +468,59 @@ int main(int argc, char* argv[])
 
     // HANDLE ENEMY MOVEMENT/ATTACK
     for(int i = 0; i < numEnemies; i++) {
-      // Get enemy sprite data:
-      int spriteIndex = enemy[i].spriteIndex;
-      Sprite enemySprite = sprite[spriteIndex];
+      // Get enemy data:
+      Enemy enemy = enemies[i];
+
+      // Check if enemy is dead:
+      if (enemy.state == DEAD) continue;
+      
+      if (enemy.state != DEAD && enemy.health <= 0) {
+        enemy.state = DEAD;
+        continue;
+      }
+
+      // Ensure we have grabbed the correct sprite:
+      int spriteId = enemy.spriteId;
+      Sprite enemySprite = sprite[0];
+      if (enemySprite.id != spriteId) {
+        for (int j = 0; j < numSprites; j++) {
+          if (sprite[j].id == spriteId) {
+            enemySprite = sprite[j];
+            break;
+          }
+        }
+      }
+
+      // Handle moving to and attacking player character:
+      double distanceToPlayer = sqrt((posX - enemySprite.x) * (posX - enemySprite.x) + (posY - enemySprite.y) * (posY - enemySprite.y));
 
       // Enemy is in a state where they can start/continue moving:
-      if (enemy[i].state == IDLE || enemy[i].state == MOVING) {
-        // Enemies move to player if player within movementRange but not within attackRange:
-        int distanceToPlayer = sqrt((posX - sprite[i].x) * (posX - sprite[i].x) + (posY - sprite[i].y) * (posY - sprite[i].y));
+      if (enemy.state == IDLE || enemy.state == MOVING) {
+        // Enemy sprites move to player if player within movementRange but not within attackRange:
+        if (distanceToPlayer <= enemy.movementRange && distanceToPlayer > enemy.attackRange) {
+          // Move enemy towards player
+          //TODO: Check for walls in the way, similar to player movement code?
+          double moveDir = atan2(posY - enemySprite.y, posX - enemySprite.x);
+          enemySprite.x += cos(moveDir) * (enemy.movementSpeed / (double)texHeight);
+          enemySprite.y += sin(moveDir) * (enemy.movementSpeed / (double)texHeight);
+          enemy.state = MOVING;
+        } else {
+          enemy.state = IDLE;
+        }
 
-        // Enemies telegraph attack when in attackRange, if past attack cooldown
+        if (enemy.state == IDLE && distanceToPlayer <= enemy.attackRange) {
+          // Enemy is in range to attack player, so start attack telegraph
+          enemy.state = ATTACKING;
+          //TODO: Set enemy sprite to attack telegraph
+          //TODO: Start telegraph cooldown
+          //TODO: Check post-attack cooldown too?
+        } else if (enemy.state == ATTACKING && distanceToPlayer <= enemy.attackRange) {
+          // Enemy is in attack telegraph, so check if telegraph cooldown is over
+          //TODO: Implement cooldowns
+        }
         // Enemies attack when in attackRange, if past attack telegraph cooldown
         // Enemies deal damage to player (check for player blocking)
       }
-      // Enemies move to player
-      // Enemies telegraph attack when in attackRange, if past attack cooldown
-      // Enemies attack when in attackRange, if past attack telegraph cooldown
-      // Enemies deal damage to player (check for player blocking)
     }
 
 
