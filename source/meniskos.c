@@ -104,19 +104,6 @@ Sprite sprite[numSprites] =
   {5.5, 6.5, 6, 2, 1} // Worm enemy
 };
 
-typedef struct Enemy 
-{
-  int health;
-  int damage;
-  int state; //TODO: enum
-  double movementRange; // moves to player when player in range, in tiles
-  int movementSpeed; // how many frames to move 1 pixel
-  double attackRange; // attacks player when player in range, in tiles
-  int attackCooldown; // how long in frames between attacks
-  int attackSpeed; // how long in frames between attack telegraph (frame 2 of gif) and actual attack
-  int spriteId; // used to grab this enemy's struct when iterating sprites, so the relationship is Sprite->Enemy
-} Enemy;
-
 typedef enum EnemyStateType {
   IDLE,
   MOVING,
@@ -124,10 +111,24 @@ typedef enum EnemyStateType {
   DEAD
 } EnemyStateType;
 
+typedef struct Enemy 
+{
+  int health;
+  int damage;
+  EnemyStateType state; //TODO: enum
+  double movementRange; // moves to player when player in range, in tiles
+  int movementSpeed; // how many frames to move 1 pixel //TODO: Compare to how player speed is handled
+  double attackRange; // attacks player when player in range, in tiles
+  int attackCooldown; // how long in frames between attacks
+  int attackSpeed; // how long in frames between attack telegraph (frame 2 of gif) and actual attack
+  int spriteId; // used to grab this enemy's struct when iterating sprites, so the relationship is Sprite->Enemy
+  int cooldown; // how long in frames until next action
+} Enemy;
+
 const int numEnemies = 1;
 
 Enemy enemies[1] = {
-  { 100, 10, IDLE, 4.0, 12, 1.0, 60, 30, 1 }
+  { 100, 10, IDLE, 4.0, 12, 1.0, 60, 30, 1, 0 }
 };
 
 //1D Zbuffer
