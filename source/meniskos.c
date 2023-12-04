@@ -113,7 +113,7 @@ typedef struct Enemy
   double attackRange; // attacks player when player in range, in tiles
   int attackCooldown; // how long in frames between attacks
   int attackSpeed; // how long in frames between attack telegraph (frame 2 of gif) and actual attack
-  int spriteTexture; // used to grab this enemy's struct when iterating sprites, so the relationship is Sprite->Enemy
+  int spriteIndex; // used to grab this enemy's struct when iterating sprites, so the relationship is Sprite->Enemy
 } Enemy;
 
 typedef enum EnemyStateType {
@@ -126,7 +126,7 @@ typedef enum EnemyStateType {
 const int numEnemies = 1;
 
 Enemy enemy[1] = {
-  { 100, 10, IDLE, 4.0, 12, 1.0, 60, 30, 6 }
+  { 100, 10, IDLE, 4.0, 12, 1.0, 60, 30, 0 }
 };
 
 //1D Zbuffer
@@ -467,7 +467,19 @@ int main(int argc, char* argv[])
 
     // HANDLE ENEMY MOVEMENT/ATTACK
     for(int i = 0; i < numEnemies; i++) {
-      // Enemies check for player within movementRange
+      // Get enemy sprite data:
+      int spriteIndex = enemy[i].spriteIndex;
+      Sprite enemySprite = sprite[spriteIndex];
+
+      // Enemy is in a state where they can start/continue moving:
+      if (enemy[i].state == IDLE || enemy[i].state == MOVING) {
+        // Enemies move to player if player within movementRange but not within attackRange:
+        int distanceToPlayer = sqrt((posX - sprite[i].x) * (posX - sprite[i].x) + (posY - sprite[i].y) * (posY - sprite[i].y));
+
+        // Enemies telegraph attack when in attackRange, if past attack cooldown
+        // Enemies attack when in attackRange, if past attack telegraph cooldown
+        // Enemies deal damage to player (check for player blocking)
+      }
       // Enemies move to player
       // Enemies telegraph attack when in attackRange, if past attack cooldown
       // Enemies attack when in attackRange, if past attack telegraph cooldown
