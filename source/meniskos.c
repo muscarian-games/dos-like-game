@@ -1,10 +1,8 @@
 // Game: Trials of Meniskos, adapted from:
 // Port of raycast tutorial code by Lode Vandevenne
 // https://lodev.org/cgtutor/raycasting.html
-// See below for license. Note that the graphics used
-// in this sample are the same as in the tutorial, and
-// they are from the original Wolfenstein 3D, and are
-// copyright id Software.
+// See below for license. 
+//
 //    /Mattias Gustavsson
 
 /*
@@ -85,19 +83,6 @@ Sprite sprite[numSprites] =
   {5.5, 6.5, 6, 2} // Worm enemy
 };
 
-typedef struct Enemy 
-{
-  int health;
-  int damage;
-  int state;
-  int movementRange; // moves to player when player in range
-  int movementSpeed; // how many ms to move 1 pixel
-  int attackCooldown; // how long in ms between attacks
-  int attackSpeed; // how long in ms between attack telegraph (frame 2) and actual attack
-  int spriteTexture; // used to grab this enemy's struct when iterating sprites, so the relationship is Sprite->Enemy
-} Enemy;
-
-
 typedef enum GameStateType { 
   MENU, 
   PLAYING, 
@@ -118,6 +103,32 @@ typedef struct GameState
 const GameStateType startingState = MENU;
 GameState state = { startingState, 0, 0, 100, 100 };
 
+typedef struct Enemy 
+{
+  int health;
+  int damage;
+  int state; //TODO: enum
+  double movementRange; // moves to player when player in range, in tiles
+  int movementSpeed; // how many frames to move 1 pixel
+  double attackRange; // attacks player when player in range, in tiles
+  int attackCooldown; // how long in frames between attacks
+  int attackSpeed; // how long in frames between attack telegraph (frame 2 of gif) and actual attack
+  int spriteTexture; // used to grab this enemy's struct when iterating sprites, so the relationship is Sprite->Enemy
+} Enemy;
+
+typedef enum EnemyStateType {
+  IDLE,
+  MOVING,
+  ATTACKING,
+  DEAD
+} EnemyStateType;
+
+const int numEnemies = 1;
+
+Enemy enemy[1] = {
+  { 100, 10, IDLE, 4.0, 12, 1.0, 60, 30, 6 }
+};
+
 //1D Zbuffer
 double ZBuffer[screenWidth];
 
@@ -131,6 +142,7 @@ void sortSprites(int* order, double* dist, int amount);
 double dmax( double a, double b ) { return a > b ? a : b; }
 double dmin( double a, double b ) { return a < b ? a : b; }
 
+// constant indexes for textures
 int floor1 = 3;
 int floor2 = 4;
 int ceilingTexture = 5;
@@ -154,7 +166,7 @@ int main(int argc, char* argv[])
 {
   (void) argc, (void) argv;
   //TODO: Allow position to be set from level data
-  double posX = 4.0, posY = 3.5; // x and y start position, starting from (???) -- i think x,y is top left, let us start player in top right always to prevent weird look dir
+  double posX = 4.0, posY = 2.5; // x and y start position, starting from (???) -- i think x,y is top left, let us start player in top right always to prevent weird look dir
   double dirX = -1.0, dirY = 0.0; // initial direction vector -- this can be messed with to fuck up player perspective but doesn't really change just the look dir... :|
   double planeX = 0.0, planeY = 0.66; //the 2d raycaster version of camera plane
   double pitch = 0; // looking up/down, expressed in screen pixels the horizon shifts
@@ -452,6 +464,16 @@ int main(int argc, char* argv[])
       }
 #endif // !FLOOR_HORIZONTAL
     }
+
+    // HANDLE ENEMY MOVEMENT/ATTACK
+    for(int i = 0; i < numEnemies; i++) {
+      // Enemies check for player within movementRange
+      // Enemies move to player
+      // Enemies telegraph attack when in attackRange, if past attack cooldown
+      // Enemies attack when in attackRange, if past attack telegraph cooldown
+      // Enemies deal damage to player (check for player blocking)
+    }
+
 
     // SPRITE CASTING
     // sort sprites from far to close
