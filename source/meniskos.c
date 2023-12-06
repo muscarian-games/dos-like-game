@@ -1,7 +1,7 @@
 // Game: Trials of Meniskos, adapted from:
 // Port of raycast tutorial code by Lode Vandevenne
 // https://lodev.org/cgtutor/raycasting.html
-// See below for license. 
+// See below for license.
 //
 //    /Mattias Gustavsson
 
@@ -68,15 +68,15 @@ int worldMap[mapWidth][mapHeight] =
   {3,3,3,3,3,3,3,3,3,3}
 };
 
-typedef enum GameStateType { 
-  MENU, 
-  PLAYING, 
-  PAUSED, 
-  GAMEOVER, 
-  WIN 
+typedef enum GameStateType {
+  MENU,
+  PLAYING,
+  PAUSED,
+  GAMEOVER,
+  WIN
 } GameStateType;
 
-typedef struct GameState 
+typedef struct GameState
 {
   GameStateType state;
   int level;
@@ -111,13 +111,13 @@ typedef enum EnemyStateType {
   DEAD
 } EnemyStateType;
 
-typedef struct Enemy 
+typedef struct Enemy
 {
   int health;
   int damage;
   EnemyStateType state; //TODO: enum
   double movementRange; // moves to player when player in range, in tiles
-  int movementSpeed; // how many frames to move 1 pixel //TODO: Compare to how player speed is handled
+  double movementSpeed; // how many frames to move 1 pixel //TODO: Compare to how player speed is handled
   double attackRange; // attacks player when player in range, in tiles
   int attackCooldown; // how long in frames between attacks
   int attackSpeed; // how long in frames between attack telegraph (frame 2 of gif) and actual attack
@@ -128,7 +128,7 @@ typedef struct Enemy
 const int numEnemies = 1;
 
 Enemy enemies[1] = {
-  { 100, 10, IDLE, 4.0, 12, 1.0, 60, 30, 1, 0 }
+  { 100, 10, IDLE, 12.0, (12.0 / 60.0), 1.0, 60, 30, 1, 0 }
 };
 
 //1D Zbuffer
@@ -150,7 +150,7 @@ int floor2 = 4;
 int ceilingTexture = 5;
 int numTextures = 8;
 
-void set_textures(uint8_t* texture[numTextures], int tw, int th, int palcount, uint8_t palette[768]) 
+void set_textures(uint8_t* texture[numTextures], int tw, int th, int palcount, uint8_t palette[768])
 {
   texture[0] = loadgif( "files/meniskos/brick-wall-mono.gif", &tw, &th, &palcount, palette );
   texture[1] = loadgif( "files/meniskos/wood-wall-mono.gif", &tw, &th, &palcount, palette );
@@ -186,7 +186,7 @@ int main(int argc, char* argv[])
   uint8_t palette[ 768 ];
 
   set_textures(texture, tw, th, palcount, palette);
-  
+
   for( int i = 0; i < palcount; ++i ) {
       setpal(i, palette[ 3 * i + 0 ], palette[ 3 * i + 1 ], palette[ 3 * i + 2 ] );
   }
@@ -474,19 +474,23 @@ int main(int argc, char* argv[])
 
       // Check if enemy is dead:
       if (enemy.state == DEAD) continue;
-      
+
       if (enemy.state != DEAD && enemy.health <= 0) {
         enemy.state = DEAD;
+        enemies[i] = enemy;
+        // TODO: set enemy sprite to dead sprite
         continue;
       }
 
       // Ensure we have grabbed the correct sprite:
       int spriteId = enemy.spriteId;
-      Sprite enemySprite = sprite[0];
+      int spriteIndex = 0;
+      Sprite enemySprite = sprite[spriteIndex];
       if (enemySprite.id != spriteId) {
         for (int j = 0; j < numSprites; j++) {
           if (sprite[j].id == spriteId) {
             enemySprite = sprite[j];
+            spriteIndex = j;
             break;
           }
         }
@@ -494,7 +498,8 @@ int main(int argc, char* argv[])
 
       // Handle moving to and attacking player character:
       double distanceToPlayer = sqrt((posX - enemySprite.x) * (posX - enemySprite.x) + (posY - enemySprite.y) * (posY - enemySprite.y));
-
+      printf("Distance to player: %f\n", distanceToPlayer);
+      printf("Enemy state: %d\n", enemy.state);
       // Enemy is in a state where they can start/continue moving:
       if (enemy.state == IDLE || enemy.state == MOVING) {
         // Enemy sprites move to player if player within movementRange but not within attackRange:
@@ -502,26 +507,44 @@ int main(int argc, char* argv[])
           // Move enemy towards player
           //TODO: Check for walls in the way, similar to player movement code?
           double moveDir = atan2(posY - enemySprite.y, posX - enemySprite.x);
-          enemySprite.x += cos(moveDir) * (enemy.movementSpeed / (double)texHeight);
-          enemySprite.y += sin(moveDir) * (enemy.movementSpeed / (double)texHeight);
+          double xMovement = cos(moveDir) * (enemy.movementSpeed / (double)texWidth);
+          double yMovement = sin(moveDir) * (enemy.movementSpeed / (double)texWidth);
+          printf("Enemy moving to player\n Enemy position: %f, %f\n Movedir %f\n xMovement %f\n yMovement %f\n", enemySprite.x, enemySprite.y, moveDir, xMovement, yMovement);
+          enemySprite.x = enemySprite.x + xMovement;
+          enemySprite.y = enemySprite.y + yMovement;
           enemy.state = MOVING;
+          printf("After move enemy position: %f, %f\n", enemySprite.x, enemySprite.y);
         } else {
           enemy.state = IDLE;
+          printf("Enemy idle\n");
         }
 
         if (enemy.state == IDLE && distanceToPlayer <= enemy.attackRange) {
           // Enemy is in range to attack player, so start attack telegraph
           enemy.state = ATTACKING;
-          //TODO: Set enemy sprite to attack telegraph
-          //TODO: Start telegraph cooldown
-          //TODO: Check post-attack cooldown too?
-        } else if (enemy.state == ATTACKING && distanceToPlayer <= enemy.attackRange) {
-          // Enemy is in attack telegraph, so check if telegraph cooldown is over
-          //TODO: Implement cooldowns
         }
         // Enemies attack when in attackRange, if past attack telegraph cooldown
         // Enemies deal damage to player (check for player blocking)
       }
+
+      //TODO: Set enemy sprite to attack telegraph
+      //TODO: Start telegraph cooldown
+      //TODO: Check post-attack cooldown too?
+      if (enemy.state == ATTACKING) {
+        if (distanceToPlayer <= enemy.attackRange) {
+          printf("Enemy attacking\n");
+          // Enemy is in attack telegraph, so check if telegraph cooldown is over
+          //TODO: Implement cooldowns
+        } else if (distanceToPlayer > enemy.attackRange) {
+          printf("Player out of attack range now, idling");
+          // Enemy is out of attack range, so stop attack telegraph
+          enemy.state = IDLE;
+        }
+      }
+
+      // Update enemy and their sprite, must be done after all state changes:
+      enemies[i] = enemy;
+      sprite[spriteIndex] = enemySprite;
     }
 
 
@@ -583,8 +606,8 @@ int main(int argc, char* argv[])
         // 2) it's on the screen (left)
         // 3) it's on the screen (right)
         // 4) ZBuffer, with perpendicular distance
-        if(transformY > 0 && stripe > 0 && stripe < w && transformY < ZBuffer[stripe])
-        for(int y = drawStartY; y < drawEndY; y++) // for every pixel of the current stripe
+        if (transformY > 0 && stripe > 0 && stripe < w && transformY < ZBuffer[stripe])
+        for (int y = drawStartY; y < drawEndY; y++) // for every pixel of the current stripe
         {
           int d = (y-vMoveScreen) * 256 - h * 128 + spriteHeight * 128; //256 and 128 factors to avoid floats
           int texY = ((d * texHeight) / spriteHeight) / 256;
@@ -604,7 +627,7 @@ int main(int argc, char* argv[])
     double moveSpeed = frameTime * 3.0; //the constant value is in squares/order
     double rotSpeed = frameTime * 2.0; //the constant value is in radians/order
 
-    //move forward if no wall in front of you
+    //move forward if no wall in front of you //TODO: use this for npcs too
     if (keystate(KEY_UP))
     {
       if(worldMap[(int)(posX + dirX * moveSpeed*5)][(int)(posY)] == false) posX += dirX * moveSpeed;
@@ -680,11 +703,11 @@ struct sortspr_t {
 
 
 int cmpspr(const void * a, const void * b) {
-   struct sortspr_t const* spra = (struct sortspr_t const*)a;
-   struct sortspr_t const* sprb = (struct sortspr_t const*)b;
-   if( spra->dist < sprb->dist ) return -1;
-   else if( spra->dist > sprb->dist ) return 1;
-   else return 0;
+  struct sortspr_t const* spra = (struct sortspr_t const*)a;
+  struct sortspr_t const* sprb = (struct sortspr_t const*)b;
+  if( spra->dist < sprb->dist ) return -1;
+  else if( spra->dist > sprb->dist ) return 1;
+  else return 0;
 }
 
 
