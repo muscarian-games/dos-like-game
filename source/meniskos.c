@@ -115,7 +115,7 @@ typedef struct Enemy
 {
   int health;
   int damage;
-  EnemyStateType state; //TODO: enum
+  EnemyStateType state;
   double movementRange; // moves to player when player in range, in tiles
   double movementSpeed; // how many frames to move 1 pixel //TODO: Compare to how player speed is handled
   double attackRange; // attacks player when player in range, in tiles
@@ -128,7 +128,7 @@ typedef struct Enemy
 const int numEnemies = 1;
 
 Enemy enemies[1] = {
-  { 100, 10, IDLE, 12.0, (12.0 / 60.0), 1.0, 60, 30, 1, 0 }
+  { 100, 10, IDLE, 12.0, 12.0, 1.0, 3, 2, 1, 0 }
 };
 
 //1D Zbuffer
@@ -507,8 +507,9 @@ int main(int argc, char* argv[])
           // Move enemy towards player
           //TODO: Check for walls in the way, similar to player movement code?
           double moveDir = atan2(posY - enemySprite.y, posX - enemySprite.x);
-          double xMovement = cos(moveDir) * (enemy.movementSpeed / (double)texWidth);
-          double yMovement = sin(moveDir) * (enemy.movementSpeed / (double)texWidth);
+          double speedPerFrame = enemy.movementSpeed / 60.0; // 60 fps
+          double xMovement = cos(moveDir) * (speedPerFrame / (double)texWidth);
+          double yMovement = sin(moveDir) * (speedPerFrame / (double)texWidth);
           printf("Enemy moving to player\n Enemy position: %f, %f\n Movedir %f\n xMovement %f\n yMovement %f\n", enemySprite.x, enemySprite.y, moveDir, xMovement, yMovement);
           enemySprite.x = enemySprite.x + xMovement;
           enemySprite.y = enemySprite.y + yMovement;
@@ -519,30 +520,39 @@ int main(int argc, char* argv[])
           printf("Enemy idle\n");
         }
 
-        if (enemy.state == IDLE && distanceToPlayer <= enemy.attackRange) {
+        if (enemy.state == IDLE && distanceToPlayer <= enemy.attackRange && enemy.cooldown <= 0) {
           // Enemy is in range to attack player, so start attack telegraph
           enemy.state = ATTACKING;
+          printf("Enemy attacking (telegraph)\n");
+          enemySprite.texture += 1;
+          enemy.cooldown = enemy.attackSpeed * 60.0;
+          //TODO: Sfx
         }
-        // Enemies attack when in attackRange, if past attack telegraph cooldown
-        // Enemies deal damage to player (check for player blocking)
       }
+
+      printf("Enemy cooldown is %d\n", enemy.cooldown);
 
       //TODO: Set enemy sprite to attack telegraph
       //TODO: Start telegraph cooldown
       //TODO: Check post-attack cooldown too?
       if (enemy.state == ATTACKING) {
-        if (distanceToPlayer <= enemy.attackRange) {
-          printf("Enemy attacking\n");
-          // Enemy is in attack telegraph, so check if telegraph cooldown is over
-          //TODO: Implement cooldowns
+        if (distanceToPlayer <= enemy.attackRange && enemy.cooldown <= 0) {
+          // Deal damage to player
+          printf("Enemy attacking (deal damage)\n");
+          enemy.cooldown = enemy.attackCooldown * 60.0;
+          state.health -= enemy.damage;
+          printf("Player health: %d\n", state.health);
+          enemySprite.texture -= 1;
         } else if (distanceToPlayer > enemy.attackRange) {
           printf("Player out of attack range now, idling");
           // Enemy is out of attack range, so stop attack telegraph
           enemy.state = IDLE;
+          enemySprite.texture -= 1;
         }
       }
 
       // Update enemy and their sprite, must be done after all state changes:
+      if (enemy.cooldown > 0) enemy.cooldown -= 1;
       enemies[i] = enemy;
       sprite[spriteIndex] = enemySprite;
     }
