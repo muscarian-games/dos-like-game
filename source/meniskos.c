@@ -167,6 +167,13 @@ void set_textures(uint8_t* texture[numTextures], int tw, int th, int palcount, u
   texture[7] = loadgif( "files/meniskos/worm_02.gif", &tw, &th, &palcount, palette );
 }
 
+//TODO: associate tracks with levels?
+int numTracks = 2;
+void load_music(struct music_t* music[numTracks]) {
+  setsoundbank( DEFAULT_SOUNDBANK_SB16 );
+  music[0] = loadmid( "files/sound/meniskos_1.mid" ); // menu
+}
+
 int main(int argc, char* argv[])
 {
   (void) argc, (void) argv;
@@ -189,6 +196,9 @@ int main(int argc, char* argv[])
   uint8_t palette[ 768 ];
 
   set_textures(texture, tw, th, palcount, palette);
+  struct music_t* music[numTracks];
+  load_music(music);
+  playmusic( music[0], 1, 255 );
 
   for( int i = 0; i < palcount; ++i ) {
       setpal(i, palette[ 3 * i + 0 ], palette[ 3 * i + 1 ], palette[ 3 * i + 2 ] );
