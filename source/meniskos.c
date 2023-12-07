@@ -123,12 +123,15 @@ typedef struct Enemy
   int attackSpeed; // how long in frames between attack telegraph (frame 2 of gif) and actual attack
   int spriteId; // used to grab this enemy's struct when iterating sprites, so the relationship is Sprite->Enemy
   int cooldown; // how long in frames until next action
+  int normalTexture;
+  int attackTexture;
+  int deadTexture;
 } Enemy;
 
 const int numEnemies = 1;
 
 Enemy enemies[1] = {
-  { 100, 10, IDLE, 12.0, 12.0, 1.0, 3, 2, 1, 0 }
+  { 100, 10, IDLE, 12.0, 12.0, 1.0, 3, 2, 1, 0, 6, 7, 6 }
 };
 
 //1D Zbuffer
@@ -524,7 +527,7 @@ int main(int argc, char* argv[])
           // Enemy is in range to attack player, so start attack telegraph
           enemy.state = ATTACKING;
           printf("Enemy attacking (telegraph)\n");
-          enemySprite.texture += 1;
+          enemySprite.texture = enemy.attackTexture;
           enemy.cooldown = enemy.attackSpeed * 60.0;
           //TODO: Sfx
         }
@@ -535,6 +538,7 @@ int main(int argc, char* argv[])
       //TODO: Set enemy sprite to attack telegraph
       //TODO: Start telegraph cooldown
       //TODO: Check post-attack cooldown too?
+      //TODO: State machine?
       if (enemy.state == ATTACKING) {
         if (distanceToPlayer <= enemy.attackRange && enemy.cooldown <= 0) {
           // Deal damage to player
@@ -542,12 +546,13 @@ int main(int argc, char* argv[])
           enemy.cooldown = enemy.attackCooldown * 60.0;
           state.health -= enemy.damage;
           printf("Player health: %d\n", state.health);
-          enemySprite.texture -= 1;
+          enemy.state = IDLE;
+          enemySprite.texture = enemy.normalTexture;
         } else if (distanceToPlayer > enemy.attackRange) {
           printf("Player out of attack range now, idling");
           // Enemy is out of attack range, so stop attack telegraph
           enemy.state = IDLE;
-          enemySprite.texture -= 1;
+          enemySprite.texture = enemy.normalTexture;
         }
       }
 
@@ -626,6 +631,11 @@ int main(int argc, char* argv[])
         }
       }
     }
+
+    // Show UI overlay
+    static char healthString[32];
+    snprintf(healthString, 12, "HEALTH: %d", state.health);
+    centertextxy(12, 12, healthString, 100);
 
     buffer = swapbuffers();
     // No need to clear the screen here, since everything is overdrawn with floor and ceiling
