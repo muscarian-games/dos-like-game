@@ -104,6 +104,18 @@ Sprite sprite[numSprites] =
   {5.5, 6.5, 6, 2, 1} // Worm enemy
 };
 
+typedef struct Weapon {
+  int texture;
+  int damage;
+  int range;
+  int cooldown;
+  int attackSpeed;
+} Weapon;
+
+Weapon weapon[1] = {
+  { 8, 10, 1, 0, 6 } // sword
+};
+
 typedef enum EnemyStateType {
   IDLE,
   MOVING,
@@ -151,7 +163,7 @@ double dmin( double a, double b ) { return a < b ? a : b; }
 int floor1 = 3;
 int floor2 = 4;
 int ceilingTexture = 5;
-int numTextures = 8;
+int numTextures = 9;
 
 void set_textures(uint8_t* texture[numTextures], int tw, int th, int palcount, uint8_t palette[768])
 {
@@ -165,6 +177,7 @@ void set_textures(uint8_t* texture[numTextures], int tw, int th, int palcount, u
   // load some mobile sprite textures
   texture[6] = loadgif( "files/meniskos/worm_01.gif", &tw, &th, &palcount, palette );
   texture[7] = loadgif( "files/meniskos/worm_02.gif", &tw, &th, &palcount, palette );
+  texture[8] = loadgif( "files/meniskos/sword.gif", &tw, &th, &palcount, palette );
 }
 
 //TODO: associate tracks with levels?
@@ -642,6 +655,19 @@ int main(int argc, char* argv[])
         }
       }
     }
+
+    // Show weapon in bottom left
+    //TODO: Scale weapon sprite to 64px (https://lodev.org/cgtutor/raycasting3.html#Scale)
+    //TODO: Fix weird rotational issue
+    int weaponTexture = weapon[0].texture;
+    int weaponScale = 8;
+    for (int x = 0; x < texWidth * weaponScale; x++) {
+      for (int y = 0; y < texHeight * weaponScale; y++) {
+        uint32_t color = texture[weaponTexture][texWidth * (y / weaponScale) + (x / weaponScale)];
+        if ((color & 0x00FFFFFF) != 0) buffer[ x + w * (screenHeight - y) ] = (uint8_t)color;
+      }
+    }
+
 
     // Show UI overlay
     static char healthString[32];
