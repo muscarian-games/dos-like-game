@@ -664,7 +664,7 @@ int main(int argc, char* argv[])
     for (int x = 0; x < texWidth * weaponScale; x++) {
       for (int y = 0; y < texHeight * weaponScale; y++) {
         uint32_t color = texture[weaponTexture][texWidth * (y / weaponScale) + (x / weaponScale)];
-        if ((color & 0x00FFFFFF) != 0) buffer[ x + w * (screenHeight - y) ] = (uint8_t)color;
+        if ((color & 0x00FFFFFF) != 0) buffer[ x + w * ((screenHeight - (texHeight * weaponScale)) + y) ] = (uint8_t)(7); // paint pixel colors, 0 = ???, 1 = green, 2 = light blue, 3 = (???), 4 = red, 5 = fuchsia, 6 = orange, 7 = white 
       }
     }
 
