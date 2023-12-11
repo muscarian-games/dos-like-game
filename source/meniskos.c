@@ -76,9 +76,16 @@ typedef enum GameStateType {
   WIN
 } GameStateType;
 
+typedef enum PlayerStateType {
+  PLAYER_NORMAL, // moving or standing still
+  PLAYER_ATTACKING, // cannot move or block while attacking
+  PLAYER_BLOCKING, // moves slowly while blocking, attack interrupts block
+} PlayerStateType;
+
 typedef struct GameState
 {
   GameStateType state;
+  PlayerStateType playerstate;
   int level;
   int score;
   int health;
@@ -86,7 +93,7 @@ typedef struct GameState
 } GameState;
 
 const GameStateType startingState = MENU;
-GameState state = { startingState, 0, 0, 100, 100 };
+GameState state = { startingState, PLAYER_NORMAL, 0, 0, 100, 100 };
 
 typedef struct Sprite
 {
@@ -106,14 +113,18 @@ Sprite sprite[numSprites] =
 
 typedef struct Weapon {
   int texture;
+  int attackTexture;
   int damage;
   int range;
   int cooldown;
+  int animCooldown; // consistently like 24 frames?
   int attackSpeed;
 } Weapon;
 
+int weaponAnimCooldown = 24; // frames
+
 Weapon weapon[1] = {
-  { 8, 10, 1, 0, 6 } // sword
+  { 8, 9, 10, 1, 0, 2 } // sword
 };
 
 typedef enum EnemyStateType {
@@ -178,6 +189,7 @@ void set_textures(uint8_t* texture[numTextures], int tw, int th, int palcount, u
   texture[6] = loadgif( "files/meniskos/worm_01.gif", &tw, &th, &palcount, palette );
   texture[7] = loadgif( "files/meniskos/worm_02.gif", &tw, &th, &palcount, palette );
   texture[8] = loadgif( "files/meniskos/sword.gif", &tw, &th, &palcount, palette );
+  texture[9] = loadgif( "files/meniskos/sword_hit.gif", &tw, &th, &palcount, palette );
 }
 
 //TODO: associate tracks with levels?
@@ -657,9 +669,7 @@ int main(int argc, char* argv[])
     }
 
     // Show weapon in bottom left
-    //TODO: Scale weapon sprite to 64px (https://lodev.org/cgtutor/raycasting3.html#Scale)
-    //TODO: Fix weird rotational issue
-    int weaponTexture = weapon[0].texture;
+    int weaponTexture = state.playerstate == PLAYER_ATTACKING ? weapon[0].attackTexture : weapon[0].texture;
     int weaponScale = 8;
     for (int x = 0; x < texWidth * weaponScale; x++) {
       for (int y = 0; y < texHeight * weaponScale; y++) {
@@ -719,33 +729,74 @@ int main(int argc, char* argv[])
       planeY = oldPlaneX * sin(rotSpeed) + planeY * cos(rotSpeed);
     }
 
-    // Very simple demonstration jump/pitch controls
-    if(keystate(KEY_PRIOR))
-    {
-      // look up
-      pitch += 400 * moveSpeed;
-      if(pitch > 200) pitch = 200;
+    // Handle cooldowns related to player-actions
+    if (state.playerstate == PLAYER_ATTACKING) {
+      if (weapon[0].animCooldown > 0) {
+        weapon[0].animCooldown -= 1;
+      } else {
+        state.playerstate = PLAYER_NORMAL;
+      }
+
+      if (weapon[0].cooldown > 0) {
+        weapon[0].cooldown -= 1;
+      } 
     }
-    if(keystate(KEY_NEXT))
+
+    // attack/block
+    if(state.playerstate != PLAYER_BLOCKING && keystate(KEY_SPACE) && weapon[0].cooldown <= 0)
     {
-      // look down
-      pitch -= 400 * moveSpeed;
-      if(pitch < -200) pitch = -200;
-    }
-    if(keystate(KEY_SPACE))
+      // attack
+      state.playerstate = PLAYER_ATTACKING;
+
+      // start attack animation cooldown
+      weapon[0].animCooldown = weaponAnimCooldown;
+      weapon[0].cooldown = weapon[0].attackSpeed * 60.0;
+
+      // Deal damage to NPCs in front of player and in range:
+      for(int i = 0; i < numEnemies; i++) {
+        // Get enemy data:
+        Enemy enemy = enemies[i];
+
+        // Check if enemy is dead:
+        if (enemy.state == DEAD) continue;
+
+        // Ensure we have grabbed the correct sprite:
+        int spriteId = enemy.spriteId;
+        int spriteIndex = 0;
+        Sprite enemySprite = sprite[spriteIndex];
+        if (enemySprite.id != spriteId) {
+          for (int j = 0; j < numSprites; j++) {
+            if (sprite[j].id == spriteId) {
+              enemySprite = sprite[j];
+              spriteIndex = j;
+              break;
+            }
+          }
+        }
+
+        // Check if enemy is in range:
+        double distanceToPlayer = sqrt((posX - enemySprite.x) * (posX - enemySprite.x) + (posY - enemySprite.y) * (posY - enemySprite.y));
+        if (distanceToPlayer <= weapon[0].range) {
+          // Deal damage to enemy
+          enemy.health -= weapon[0].damage;
+          printf("Enemy health: %d\n", enemy.health);
+
+          if (enemy.health <= 0) {
+            // Enemy is dead, so set state to dead and set sprite to dead sprite
+            enemy.state = DEAD;
+            sprite[spriteIndex].texture = enemy.deadTexture;
+          }
+        }
+      }
+
+    } else if (state.playerstate != PLAYER_ATTACKING && keystate(KEY_LSHIFT))
     {
-      // jump
-      posZ = 50;
+      // block
+      state.playerstate = PLAYER_BLOCKING;
+    } else {
+      // not attacking or blocking
+      state.playerstate = PLAYER_NORMAL;
     }
-    if(keystate(KEY_LSHIFT))
-    {
-      // crouch
-      posZ = -50;
-    }
-    if(pitch > 0) pitch = dmax(0, pitch - 100 * moveSpeed);
-    if(pitch < 0) pitch = dmin(0, pitch + 100 * moveSpeed);
-    if(posZ > 0) posZ = dmax(0, posZ - 100 * moveSpeed);
-    if(posZ < 0) posZ = dmin(0, posZ + 100 * moveSpeed);
 
     if(keystate(KEY_ESCAPE)) break;
   }
