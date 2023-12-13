@@ -35,13 +35,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <math.h>
 #include "dos.h"
 
-// set to 1 to use the horizontal floor algorithm (contributed by Ádám Tóth in 2019),
-// or to 0 to use the slower vertical floor algorithm.
-#define FLOOR_HORIZONTAL 1
-
-// Crash debugging: Does not have to do with the floor algo flag. Does not have to do with sprites.
-
-
 #define screenWidth 320
 #define screenHeight 200
 #define texWidth 16 // must be power of two
@@ -87,9 +80,19 @@ typedef struct GameState
   GameStateType state;
   PlayerStateType playerstate;
   int level;
+  // Player stats
   int score;
   int health;
   int stamina;
+  // Player position
+  double posX;
+  double posY;
+  double posZ; // Unused unless we add crouch/jump back.
+  double dirX;
+  double dirY;
+  double planeX;
+  double planeY;
+  double pitch;
 } GameState;
 
 const GameStateType startingState = MENU;
@@ -200,15 +203,29 @@ void load_music(struct music_t* music[numTracks]) {
   music[1] = loadmid( "files/sound/meniskos_2c.mid" ); // dungeon
 }
 
+void set_positions() {
+  // posX = 4.0, posY = 2.5; // x and y start position, starting from (???) -- i think x,y is top left, let us start player in top right always to prevent weird look dir
+  // dirX = -1.0, dirY = 0.0; // initial direction vector -- this can be messed with to fuck up player perspective but doesn't really change just the look dir... :|
+  // planeX = 0.0, planeY = 0.66; //the 2d raycaster version of camera plane
+  // pitch = 0; // looking up/down, expressed in screen pixels the horizon shifts
+  // posZ = 0; // vertical camera strafing up/down, for jumping/crouching. 0 means standard height. Expressed in screen pixels a wall at distance 1 shifts
+  // Rewrite the above but use the game state positioning:
+  state.posX = 4.0;
+  state.posY = 2.5;
+  state.dirX = -1.0;
+  state.dirY = 0.0;
+  state.planeX = 0.0;
+  state.planeY = 0.66;
+  state.pitch = 0;
+  state.posZ = 0;
+
+}
+
 int main(int argc, char* argv[])
 {
   (void) argc, (void) argv;
   //TODO: Allow position to be set from level data
-  double posX = 4.0, posY = 2.5; // x and y start position, starting from (???) -- i think x,y is top left, let us start player in top right always to prevent weird look dir
-  double dirX = -1.0, dirY = 0.0; // initial direction vector -- this can be messed with to fuck up player perspective but doesn't really change just the look dir... :|
-  double planeX = 0.0, planeY = 0.66; //the 2d raycaster version of camera plane
-  double pitch = 0; // looking up/down, expressed in screen pixels the horizon shifts
-  double posZ = 0; // vertical camera strafing up/down, for jumping/crouching. 0 means standard height. Expressed in screen pixels a wall at distance 1 shifts
+  set_positions();
 
   uint8_t* texture[numTextures];
 
@@ -236,28 +253,27 @@ int main(int argc, char* argv[])
   while(!shuttingdown())
   {
     waitvbl();
-#if FLOOR_HORIZONTAL
-    //FLOOR CASTING
+    // uses FLOOR CASTING algo
     for(int y = 0; y < screenHeight; ++y)
     {
       // whether this section is floor or ceiling
-      bool is_floor = y > screenHeight / 2 + pitch;
+      bool is_floor = y > screenHeight / 2 + state.pitch;
 
       // rayDir for leftmost ray (x = 0) and rightmost ray (x = w)
-      float rayDirX0 = (float)(dirX - planeX);
-      float rayDirY0 = (float)(dirY - planeY);
-      float rayDirX1 = (float)(dirX + planeX);
-      float rayDirY1 = (float)(dirY + planeY);
+      float rayDirX0 = (float)(state.dirX - state.planeX);
+      float rayDirY0 = (float)(state.dirY - state.planeY);
+      float rayDirX1 = (float)(state.dirX + state.planeX);
+      float rayDirY1 = (float)(state.dirY + state.planeY);
 
       // Current y position compared to the center of the screen (the horizon)
-      int p = (int)( is_floor ? (y - screenHeight / 2 - pitch) : (screenHeight / 2 - y + pitch) );
+      int p = (int)( is_floor ? (y - screenHeight / 2 - state.pitch) : (screenHeight / 2 - y + state.pitch) );
 
       // Vertical position of the camera.
       // NOTE: with 0.5, it's exactly in the center between floor and ceiling,
       // matching also how the walls are being raycasted. For different values
       // than 0.5, a separate loop must be done for ceiling and floor since
       // they're no longer symmetrical.
-      float camZ = (float)( is_floor ? (0.5 * screenHeight + posZ) : (0.5 * screenHeight - posZ) );
+      float camZ = (float)( is_floor ? (0.5 * screenHeight + state.posZ) : (0.5 * screenHeight - state.posZ) );
 
       // Horizontal distance from the camera to the floor for the current row.
       // 0.5 is the z position exactly in the middle between floor and ceiling.
@@ -281,8 +297,8 @@ int main(int argc, char* argv[])
       float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / screenWidth;
 
       // real world coordinates of the leftmost column. This will be updated as we step to the right.
-      float floorX = (float)( posX + rowDistance * rayDirX0 );
-      float floorY = (float)( posY + rowDistance * rayDirY0 );
+      float floorX = (float)( state.posX + rowDistance * rayDirX0 );
+      float floorY = (float)( state.posY + rowDistance * rayDirY0 );
 
       for(int x = 0; x < screenWidth; ++x)
       {
@@ -315,19 +331,18 @@ int main(int argc, char* argv[])
         }
       }
     }
-#endif // FLOOR_HORIZONTAL
 
-    // WALL CASTING
+    // now WALL CASTING algo
     for(int x = 0; x < w; x++)
     {
       // calculate ray position and direction
       double cameraX = 2 * x / (double)(w) - 1; // x-coordinate in camera space
-      double rayDirX = dirX + planeX * cameraX;
-      double rayDirY = dirY + planeY * cameraX;
+      double rayDirX = state.dirX + state.planeX * cameraX;
+      double rayDirY = state.dirY + state.planeY * cameraX;
 
       // which box of the map we're in
-      int mapX = (int)(posX);
-      int mapY = (int)(posY);
+      int mapX = (int)(state.posX);
+      int mapY = (int)(state.posY);
 
       // length of ray from current position to next x or y-side
       double sideDistX;
@@ -349,22 +364,22 @@ int main(int argc, char* argv[])
       if(rayDirX < 0)
       {
         stepX = -1;
-        sideDistX = (posX - mapX) * deltaDistX;
+        sideDistX = (state.posX - mapX) * deltaDistX;
       }
       else
       {
         stepX = 1;
-        sideDistX = (mapX + 1.0 - posX) * deltaDistX;
+        sideDistX = (mapX + 1.0 - state.posX) * deltaDistX;
       }
       if(rayDirY < 0)
       {
         stepY = -1;
-        sideDistY = (posY - mapY) * deltaDistY;
+        sideDistY = (state.posY - mapY) * deltaDistY;
       }
       else
       {
         stepY = 1;
-        sideDistY = (mapY + 1.0 - posY) * deltaDistY;
+        sideDistY = (mapY + 1.0 - state.posY) * deltaDistY;
       }
       //perform DDA
       while (hit == 0)
@@ -394,17 +409,17 @@ int main(int argc, char* argv[])
       int lineHeight = (int)(h / perpWallDist);
 
       // calculate lowest and highest pixel to fill in current stripe
-      int drawStart = (int)( -lineHeight / 2 + h / 2 + pitch + (posZ / perpWallDist) );
+      int drawStart = (int)( -lineHeight / 2 + h / 2 + state.pitch + (state.posZ / perpWallDist) );
       if(drawStart < 0) drawStart = 0;
-      int drawEnd = (int)( lineHeight / 2 + h / 2 + pitch + (posZ / perpWallDist) );
+      int drawEnd = (int)( lineHeight / 2 + h / 2 + state.pitch + (state.posZ / perpWallDist) );
       if(drawEnd >= h) drawEnd = h;
       //texturing calculations
       int texNum = worldMap[mapX][mapY] - 1; //1 subtracted from it so that texture 0 can be used!
 
       // calculate value of wallX
       double wallX; //where exactly the wall was hit
-      if(side == 0) wallX = posY + perpWallDist * rayDirY;
-      else          wallX = posX + perpWallDist * rayDirX;
+      if(side == 0) wallX = state.posY + perpWallDist * rayDirY;
+      else          wallX = state.posX + perpWallDist * rayDirX;
       wallX -= floor((wallX));
 
       //x coordinate on the texture
@@ -416,7 +431,7 @@ int main(int argc, char* argv[])
       // How much to increase the texture coordinate per screen pixel
       double step = 1.0 * texHeight / lineHeight;
       // Starting texture coordinate
-      double texPos = (drawStart - pitch - (posZ / perpWallDist) - h / 2 + lineHeight / 2) * step;
+      double texPos = (drawStart - state.pitch - (state.posZ / perpWallDist) - h / 2 + lineHeight / 2) * step;
       for(int y = drawStart; y < drawEnd; y++)
       {
         // Cast the texture coordinate to integer, and mask with (texHeight - 1) in case of overflow
@@ -430,80 +445,6 @@ int main(int argc, char* argv[])
 
       //SET THE ZBUFFER FOR THE SPRITE CASTING
       ZBuffer[x] = perpWallDist; //perpendicular distance is used
-
-#if !FLOOR_HORIZONTAL
-      //FLOOR CASTING -- this variation is unused, I think
-      double floorXWall, floorYWall; //x, y position of the floor texel at the bottom of the wall
-
-      //4 different wall directions possible
-      if(side == 0 && rayDirX > 0)
-      {
-        floorXWall = mapX;
-        floorYWall = mapY + wallX;
-      }
-      else if(side == 0 && rayDirX < 0)
-      {
-        floorXWall = mapX + 1.0;
-        floorYWall = mapY + wallX;
-      }
-      else if(side == 1 && rayDirY > 0)
-      {
-        floorXWall = mapX + wallX;
-        floorYWall = mapY;
-      }
-      else
-      {
-        floorXWall = mapX + wallX;
-        floorYWall = mapY + 1.0;
-      }
-
-      double distWall, distPlayer, currentDist;
-
-      distWall = perpWallDist;
-      distPlayer = 0.0;
-
-      if(drawEnd < 0) drawEnd = h; //becomes < 0 when the integer overflows
-
-      // draw the ceiling from the top of the screen to drawStart
-      for(int y = 0; y < drawStart; y++)
-      {
-        currentDist = (h - (2.0 * posZ)) / (h - 2.0 * (y - pitch));
-
-        double weight = (currentDist - distPlayer) / (distWall - distPlayer);
-
-        // Some variables here are called floor but apply to the ceiling here
-        double currentFloorX = weight * floorXWall + (1.0 - weight) * posX;
-        double currentFloorY = weight * floorYWall + (1.0 - weight) * posY;
-
-        int floorTexX, floorTexY;
-        floorTexX = (int)(currentFloorX * texWidth) & (texWidth - 1);
-        floorTexY = (int)(currentFloorY * texHeight) & (texHeight - 1);
-
-        buffer[ x + w * y ] = texture[ceilingTexture][texWidth * floorTexY + floorTexX];
-      }
-
-      //draw the floor from drawEnd to the bottom of the screen
-      for(int y = drawEnd + 1; y < h; y++)
-      {
-        currentDist = (h + (2.0 * posZ)) / (2.0 * (y - pitch) - h);
-
-        double weight = (currentDist - distPlayer) / (distWall - distPlayer);
-
-        double currentFloorX = weight * floorXWall + (1.0 - weight) * posX;
-        double currentFloorY = weight * floorYWall + (1.0 - weight) * posY;
-
-        int floorTexX, floorTexY;
-        floorTexX = (int)(currentFloorX * texWidth) & (texWidth - 1);
-        floorTexY = (int)(currentFloorY * texHeight) & (texHeight - 1);
-
-        int checkerBoardPattern = ((int)currentFloorX + (int)currentFloorY) & 1;
-        int floorTexture;
-        if(checkerBoardPattern == 0) floorTexture = 3;
-        else floorTexture = 4;
-
-        buffer[ x + w * y ] = (texture[floorTexture][texWidth * floorTexY + floorTexX] >> 1) & 8355711;
-      }
-#endif // !FLOOR_HORIZONTAL
     }
 
     // HANDLE ENEMY MOVEMENT/ATTACK
@@ -536,7 +477,7 @@ int main(int argc, char* argv[])
       }
 
       // Handle moving to and attacking player character:
-      double distanceToPlayer = sqrt((posX - enemySprite.x) * (posX - enemySprite.x) + (posY - enemySprite.y) * (posY - enemySprite.y));
+      double distanceToPlayer = sqrt((state.posX - enemySprite.x) * (state.posX - enemySprite.x) + (state.posY - enemySprite.y) * (state.posY - enemySprite.y));
       printf("Distance to player: %f\n", distanceToPlayer);
       printf("Enemy state: %d\n", enemy.state);
       // Enemy is in a state where they can start/continue moving:
@@ -545,7 +486,7 @@ int main(int argc, char* argv[])
         if (distanceToPlayer <= enemy.movementRange && distanceToPlayer > enemy.attackRange) {
           // Move enemy towards player
           //TODO: Check for walls in the way, similar to player movement code?
-          double moveDir = atan2(posY - enemySprite.y, posX - enemySprite.x);
+          double moveDir = atan2(state.posY - enemySprite.y, state.posX - enemySprite.x);
           double speedPerFrame = enemy.movementSpeed / 60.0; // 60 fps
           double xMovement = cos(moveDir) * (speedPerFrame / (double)texWidth);
           double yMovement = sin(moveDir) * (speedPerFrame / (double)texWidth);
@@ -604,7 +545,7 @@ int main(int argc, char* argv[])
     for(int i = 0; i < numSprites; i++)
     {
       spriteOrder[i] = i;
-      spriteDistance[i] = ((posX - sprite[i].x) * (posX - sprite[i].x) + (posY - sprite[i].y) * (posY - sprite[i].y)); //sqrt not taken, unneeded
+      spriteDistance[i] = ((state.posX - sprite[i].x) * (state.posX - sprite[i].x) + (state.posY - sprite[i].y) * (state.posY - sprite[i].y)); //sqrt not taken, unneeded
     }
     sortSprites(spriteOrder, spriteDistance, numSprites);
 
@@ -612,18 +553,18 @@ int main(int argc, char* argv[])
     for(int i = 0; i < numSprites; i++)
     {
       //translate sprite position to relative to camera
-      double spriteX = sprite[spriteOrder[i]].x - posX;
-      double spriteY = sprite[spriteOrder[i]].y - posY;
+      double spriteX = sprite[spriteOrder[i]].x - state.posX;
+      double spriteY = sprite[spriteOrder[i]].y - state.posY;
 
       //transform sprite with the inverse camera matrix
       // [ planeX   dirX ] -1                                       [ dirY      -dirX ]
       // [               ]       =  1/(planeX*dirY-dirX*planeY) *   [                 ]
       // [ planeY   dirY ]                                          [ -planeY  planeX ]
 
-      double invDet = 1.0 / (planeX * dirY - dirX * planeY); //required for correct matrix multiplication
+      double invDet = 1.0 / (state.planeX * state.dirY - state.dirX * state.planeY); //required for correct matrix multiplication
 
-      double transformX = invDet * (dirY * spriteX - dirX * spriteY);
-      double transformY = invDet * (-planeY * spriteX + planeX * spriteY); //this is actually the depth inside the screen, that what Z is in 3D, the distance of sprite to player, matching sqrt(spriteDistance[i])
+      double transformX = invDet * (state.dirY * spriteX - state.dirX * spriteY);
+      double transformY = invDet * (-state.planeY * spriteX + state.planeX * spriteY); //this is actually the depth inside the screen, that what Z is in 3D, the distance of sprite to player, matching sqrt(spriteDistance[i])
 
       int spriteScreenX = (int)((w / 2) * (1 + transformX / transformY));
 
@@ -631,7 +572,7 @@ int main(int argc, char* argv[])
       #define uDiv 1
       #define vDiv 1
       #define vMove 0.0
-      int vMoveScreen = (int)( (int)(vMove / transformY) + pitch + posZ / transformY );
+      int vMoveScreen = (int)( (int)(vMove / transformY) + state.pitch + state.posZ / transformY );
 
       // calculate height of the sprite on screen
       int spriteHeight = abs((int)(h / (transformY))) / vDiv; //using "transformY" instead of the real distance prevents fisheye
@@ -694,39 +635,39 @@ int main(int argc, char* argv[])
     double moveSpeed = frameTime * 3.0; //the constant value is in squares/order
     double rotSpeed = frameTime * 2.0; //the constant value is in radians/order
 
-    //move forward if no wall in front of you //TODO: use this for npcs too
+    // move forward if no wall in front of you //TODO: use this for npcs too
     if (keystate(KEY_UP))
     {
-      if(worldMap[(int)(posX + dirX * moveSpeed*5)][(int)(posY)] == false) posX += dirX * moveSpeed;
-      if(worldMap[(int)(posX)][(int)(posY + dirY * moveSpeed*5)] == false) posY += dirY * moveSpeed;
+      if(worldMap[(int)(state.posX + state.dirX * moveSpeed*5)][(int)(state.posY)] == false) state.posX += state.dirX * moveSpeed;
+      if(worldMap[(int)(state.posX)][(int)(state.posY + state.dirY * moveSpeed*5)] == false) state.posY += state.dirY * moveSpeed;
     }
-    //move backwards if no wall behind you
+    // move backwards if no wall behind you
     if(keystate(KEY_DOWN))
     {
-      if(worldMap[(int)(posX - dirX * moveSpeed)][(int)(posY)] == false) posX -= dirX * moveSpeed;
-      if(worldMap[(int)(posX)][(int)(posY - dirY * moveSpeed)] == false) posY -= dirY * moveSpeed;
+      if(worldMap[(int)(state.posX - state.dirX * moveSpeed)][(int)(state.posY)] == false) state.posX -= state.dirX * moveSpeed;
+      if(worldMap[(int)(state.posX)][(int)(state.posY - state.dirY * moveSpeed)] == false) state.posY -= state.dirY * moveSpeed;
     }
-    //rotate to the right
+    // rotate to the right
     if(keystate(KEY_RIGHT))
     {
       //both camera direction and camera plane must be rotated
-      double oldDirX = dirX;
-      dirX = dirX * cos(-rotSpeed) - dirY * sin(-rotSpeed);
-      dirY = oldDirX * sin(-rotSpeed) + dirY * cos(-rotSpeed);
-      double oldPlaneX = planeX;
-      planeX = planeX * cos(-rotSpeed) - planeY * sin(-rotSpeed);
-      planeY = oldPlaneX * sin(-rotSpeed) + planeY * cos(-rotSpeed);
+      double oldDirX = state.dirX;
+      state.dirX = state.dirX * cos(-rotSpeed) - state.dirY * sin(-rotSpeed);
+      state.dirY = oldDirX * sin(-rotSpeed) + state.dirY * cos(-rotSpeed);
+      double oldPlaneX = state.planeX;
+      state.planeX = state.planeX * cos(-rotSpeed) - state.planeY * sin(-rotSpeed);
+      state.planeY = oldPlaneX * sin(-rotSpeed) + state.planeY * cos(-rotSpeed);
     }
-    //rotate to the left
+    // rotate to the left
     if(keystate(KEY_LEFT))
     {
       //both camera direction and camera plane must be rotated
-      double oldDirX = dirX;
-      dirX = dirX * cos(rotSpeed) - dirY * sin(rotSpeed);
-      dirY = oldDirX * sin(rotSpeed) + dirY * cos(rotSpeed);
-      double oldPlaneX = planeX;
-      planeX = planeX * cos(rotSpeed) - planeY * sin(rotSpeed);
-      planeY = oldPlaneX * sin(rotSpeed) + planeY * cos(rotSpeed);
+      double oldDirX = state.dirX;
+      state.dirX = state.dirX * cos(rotSpeed) - state.dirY * sin(rotSpeed);
+      state.dirY = oldDirX * sin(rotSpeed) + state.dirY * cos(rotSpeed);
+      double oldPlaneX = state.planeX;
+      state.planeX = state.planeX * cos(rotSpeed) - state.planeY * sin(rotSpeed);
+      state.planeY = oldPlaneX * sin(rotSpeed) + state.planeY * cos(rotSpeed);
     }
 
     // Handle cooldowns related to player-actions
@@ -775,7 +716,7 @@ int main(int argc, char* argv[])
         }
 
         // Check if enemy is in range:
-        double distanceToPlayer = sqrt((posX - enemySprite.x) * (posX - enemySprite.x) + (posY - enemySprite.y) * (posY - enemySprite.y));
+        double distanceToPlayer = sqrt((state.posX - enemySprite.x) * (state.posX - enemySprite.x) + (state.posY - enemySprite.y) * (state.posY - enemySprite.y));
         if (distanceToPlayer <= weapon[0].range) {
           // Deal damage to enemy
           enemy.health -= weapon[0].damage;
