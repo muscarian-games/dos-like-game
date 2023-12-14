@@ -522,10 +522,10 @@ int main(int argc, char* argv[])
         if (distanceToPlayer <= enemy.attackRange && enemy.cooldown <= 0) {
           // Deal damage to player
           printf("Enemy attacking (deal damage)\n");
-          enemy.cooldown = enemy.attackCooldown * 60.0;
-          int totalDamge = state.playerstate == PLAYER_BLOCKING ? enemy.damage / 2 : enemy.damage;
           //TODO: play hit sfx based on blocking vs. not
-          state.health -= enemy.damage;
+          enemy.cooldown = enemy.attackCooldown * 60.0;
+          int totalDamage = state.playerstate == PLAYER_BLOCKING ? enemy.damage / 2 : enemy.damage;
+          state.health -= totalDamage;
           printf("Player health: %d\n", state.health);
           enemy.state = IDLE;
           enemySprite.texture = enemy.normalTexture;
@@ -636,8 +636,9 @@ int main(int argc, char* argv[])
     double frameTime = 1.0 / 60.0; //frametime is the time this frame has taken, in seconds
 
     //speed modifiers
-    double moveSpeed = frameTime * 3.0; //the constant value is in squares/order
-    double rotSpeed = frameTime * 2.0; //the constant value is in radians/order
+    double speedModifier = state.playerstate == PLAYER_BLOCKING ? 0.5 : 1.0;
+    double moveSpeed = frameTime * 3.0 * speedModifier; //the constant value is in squares/order
+    double rotSpeed = frameTime * 2.0 * speedModifier; //the constant value is in radians/order
 
     // move forward if no wall in front of you //TODO: use this for npcs too
     if (keystate(KEY_UP))
