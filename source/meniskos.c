@@ -485,6 +485,7 @@ int main(int argc, char* argv[])
         // Enemy sprites move to player if player within movementRange but not within attackRange:
         if (distanceToPlayer <= enemy.movementRange && distanceToPlayer > enemy.attackRange) {
           // Move enemy towards player
+          //TODO: play "alert" sfx
           //TODO: Check for walls in the way, similar to player movement code?
           double moveDir = atan2(state.posY - enemySprite.y, state.posX - enemySprite.x);
           double speedPerFrame = enemy.movementSpeed / 60.0; // 60 fps
@@ -502,6 +503,7 @@ int main(int argc, char* argv[])
 
         if (enemy.state == IDLE && distanceToPlayer <= enemy.attackRange && enemy.cooldown <= 0) {
           // Enemy is in range to attack player, so start attack telegraph
+          //TODO: play attack sfx
           enemy.state = ATTACKING;
           printf("Enemy attacking (telegraph)\n");
           enemySprite.texture = enemy.attackTexture;
@@ -521,6 +523,8 @@ int main(int argc, char* argv[])
           // Deal damage to player
           printf("Enemy attacking (deal damage)\n");
           enemy.cooldown = enemy.attackCooldown * 60.0;
+          int totalDamge = state.playerstate == PLAYER_BLOCKING ? enemy.damage / 2 : enemy.damage;
+          //TODO: play hit sfx based on blocking vs. not
           state.health -= enemy.damage;
           printf("Player health: %d\n", state.health);
           enemy.state = IDLE;
@@ -610,7 +614,7 @@ int main(int argc, char* argv[])
     }
 
     // Show weapon in bottom left
-    int weaponTexture = state.playerstate == PLAYER_ATTACKING ? weapon[0].attackTexture : weapon[0].texture;
+    int weaponTexture = state.playerstate == PLAYER_ATTACKING || state.playerstate == PLAYER_BLOCKING ? weapon[0].attackTexture : weapon[0].texture;
     int weaponScale = 8;
     for (int x = 0; x < texWidth * weaponScale; x++) {
       for (int y = 0; y < texHeight * weaponScale; y++) {
@@ -721,18 +725,23 @@ int main(int argc, char* argv[])
           // Deal damage to enemy
           enemy.health -= weapon[0].damage;
           printf("Enemy health: %d\n", enemy.health);
-
+          //TODO: play hit sfx
+          
           if (enemy.health <= 0) {
             // Enemy is dead, so set state to dead and set sprite to dead sprite
             enemy.state = DEAD;
             sprite[spriteIndex].texture = enemy.deadTexture;
+            //TODO: play death sfx
           }
+        } else {
+          printf("attack missed");
+          //TODO: play whiff sfx
         }
       }
 
     } else if (state.playerstate != PLAYER_ATTACKING && keystate(KEY_LSHIFT))
     {
-      // block
+      // block -- only happens while key is held down
       state.playerstate = PLAYER_BLOCKING;
     } else {
       // not attacking or blocking
