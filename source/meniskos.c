@@ -725,7 +725,7 @@ int main(int argc, char* argv[])
         if (distanceToPlayer <= weapon[0].range) {
           // Deal damage to enemy
           enemy.health -= weapon[0].damage;
-          printf("Enemy health: %d\n", enemy.health);
+          printf("Attack hit. Enemy health: %d\n", enemy.health);
           //TODO: play hit sfx
           
           if (enemy.health <= 0) {
@@ -738,6 +738,10 @@ int main(int argc, char* argv[])
           printf("attack missed");
           //TODO: play whiff sfx
         }
+
+        // To update enemy:
+        enemies[i] = enemy;
+
       }
 
     } else if (state.playerstate != PLAYER_ATTACKING && keystate(KEY_LSHIFT))
