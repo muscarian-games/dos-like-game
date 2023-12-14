@@ -526,6 +526,7 @@ int main(int argc, char* argv[])
           enemy.cooldown = enemy.attackCooldown * 60.0;
           int totalDamage = state.playerstate == PLAYER_BLOCKING ? enemy.damage / 2 : enemy.damage;
           state.health -= totalDamage;
+          state.score -= totalDamage;
           printf("Player health: %d\n", state.health);
           enemy.state = IDLE;
           enemySprite.texture = enemy.normalTexture;
@@ -629,6 +630,10 @@ int main(int argc, char* argv[])
     snprintf(healthString, 12, "HEALTH: %d", state.health);
     centertextxy(12, 12, healthString, 100);
 
+    static char scoreString[32];
+    snprintf(scoreString, 12, "SCORE: %d", state.score);
+    centertextxy(12, 24, scoreString, 100);
+
     buffer = swapbuffers();
     // No need to clear the screen here, since everything is overdrawn with floor and ceiling
 
@@ -724,7 +729,9 @@ int main(int argc, char* argv[])
         double distanceToPlayer = sqrt((state.posX - enemySprite.x) * (state.posX - enemySprite.x) + (state.posY - enemySprite.y) * (state.posY - enemySprite.y));
         if (distanceToPlayer <= weapon[0].range) {
           // Deal damage to enemy
-          enemy.health -= weapon[0].damage;
+          int totalDamage = weapon[0].damage;
+          enemy.health -= totalDamage;
+          state.score += totalDamage;
           printf("Attack hit. Enemy health: %d\n", enemy.health);
           //TODO: play hit sfx
           
