@@ -221,6 +221,10 @@ void set_positions() {
 
 }
 
+bool can_move_to(double posX, double posY) {
+  return worldMap[(int)(posX)][(int)(posY)] == false;
+}
+
 int main(int argc, char* argv[])
 {
   (void) argc, (void) argv;
@@ -455,6 +459,7 @@ int main(int argc, char* argv[])
       // Check if enemy is dead:
       if (enemy.state == DEAD) continue;
 
+      // If they died recently set them to dead:
       if (enemy.state != DEAD && enemy.health <= 0) {
         enemy.state = DEAD;
         enemies[i] = enemy;
@@ -462,7 +467,7 @@ int main(int argc, char* argv[])
         continue;
       }
 
-      // Ensure we have grabbed the correct sprite:
+      // Ensure we have grabbed the correct sprite (sprite data contains location data too):
       int spriteId = enemy.spriteId;
       int spriteIndex = 0;
       Sprite enemySprite = sprite[spriteIndex];
@@ -648,8 +653,8 @@ int main(int argc, char* argv[])
     // move forward if no wall in front of you //TODO: use this for npcs too
     if (keystate(KEY_UP))
     {
-      if(worldMap[(int)(state.posX + state.dirX * moveSpeed*5)][(int)(state.posY)] == false) state.posX += state.dirX * moveSpeed;
-      if(worldMap[(int)(state.posX)][(int)(state.posY + state.dirY * moveSpeed*5)] == false) state.posY += state.dirY * moveSpeed;
+      if(can_move_to(state.posX + state.dirX * moveSpeed*5, state.posY)) state.posX += state.dirX * moveSpeed;
+      if(can_move_to(state.posX, state.posY + state.dirY * moveSpeed*5)) state.posY += state.dirY * moveSpeed;
     }
     // move backwards if no wall behind you
     if(keystate(KEY_DOWN))
@@ -780,7 +785,6 @@ int cmpspr(const void * a, const void * b) {
   else if( spra->dist > sprb->dist ) return 1;
   else return 0;
 }
-
 
 //sort the sprites based on distance
 void sortSprites(int* order, double* dist, int amount)
