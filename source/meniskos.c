@@ -127,7 +127,7 @@ typedef struct Weapon {
 int weaponAnimCooldown = 24; // frames
 
 Weapon weapon[1] = {
-  { 8, 9, 10, 1, 0, 2 } // sword
+  { 8, 9, 10, 1, 0, 2, 2 } // sword
 };
 
 typedef enum EnemyStateType {
@@ -687,13 +687,16 @@ int main(int argc, char* argv[])
       } else {
         state.playerstate = PLAYER_NORMAL;
       }
-
-      if (weapon[0].cooldown > 0) {
-        weapon[0].cooldown -= 1;
-      } 
     }
 
+    if (weapon[0].cooldown > 0) {
+      weapon[0].cooldown -= 1;
+    } 
+
     // attack/block
+    printf("Checking for attack\n");
+    printf("Player state: %d\n", state.playerstate);
+    printf("Player weapon cooldown: %d\n", weapon[0].cooldown);
     if(state.playerstate != PLAYER_BLOCKING && keystate(KEY_SPACE) && weapon[0].cooldown <= 0)
     {
       // attack
@@ -729,10 +732,13 @@ int main(int argc, char* argv[])
         double distanceToPlayer = sqrt((state.posX - enemySprite.x) * (state.posX - enemySprite.x) + (state.posY - enemySprite.y) * (state.posY - enemySprite.y));
         if (distanceToPlayer <= weapon[0].range) {
           // Deal damage to enemy
+          //FIXME: Does a lot of damage immediately
           int totalDamage = weapon[0].damage;
           enemy.health -= totalDamage;
           state.score += totalDamage;
           printf("Attack hit. Enemy health: %d\n", enemy.health);
+          printf("Weapon cooldown %d\n", weapon[0].cooldown);
+          printf("Weapon attack speed  %d\n", weapon[0].attackSpeed);
           //TODO: play hit sfx
           
           if (enemy.health <= 0) {
