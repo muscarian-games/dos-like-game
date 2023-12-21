@@ -121,13 +121,13 @@ typedef struct Weapon {
   int range;
   int cooldown;
   int animCooldown; // consistently like 24 frames?
-  int attackSpeed;
+  double attackSpeed;
 } Weapon;
 
-int weaponAnimCooldown = 24; // frames
+int weaponAnimCooldown = 12; // frames
 
 Weapon weapon[1] = {
-  { 8, 9, 10, 1, 0, 2, 2 } // sword
+  { 8, 9, 10, 1, 0, 0, 0.5 } // sword
 };
 
 typedef enum EnemyStateType {
@@ -615,7 +615,7 @@ int main(int argc, char* argv[])
     }
 
     // Show weapon in bottom left
-    int weaponTexture = state.playerstate == PLAYER_ATTACKING || state.playerstate == PLAYER_BLOCKING ? weapon[0].attackTexture : weapon[0].texture;
+    int weaponTexture = weapon[0].animCooldown > 0 || state.playerstate == PLAYER_BLOCKING ? weapon[0].attackTexture : weapon[0].texture;
     int weaponScale = 8;
     for (int x = 0; x < texWidth * weaponScale; x++) {
       for (int y = 0; y < texHeight * weaponScale; y++) {
@@ -680,23 +680,20 @@ int main(int argc, char* argv[])
       state.planeY = oldPlaneX * sin(rotSpeed) + state.planeY * cos(rotSpeed);
     }
 
-    // Handle cooldowns related to player-actions
-    if (state.playerstate == PLAYER_ATTACKING) {
-      if (weapon[0].animCooldown > 0) {
-        weapon[0].animCooldown -= 1;
-      } else {
-        state.playerstate = PLAYER_NORMAL;
-      }
+    // Handle player weapon cooldowns:
+    if (weapon[0].animCooldown > 0) {
+      weapon[0].animCooldown -= 1;
     }
 
     if (weapon[0].cooldown > 0) {
       weapon[0].cooldown -= 1;
     } 
 
-    // attack/block
+    // Handle attack/block
     printf("Checking for attack\n");
-    printf("Player state: %d\n", state.playerstate);
+    printf("Player state: %d\n", state.playerstate == PLAYER_ATTACKING);
     printf("Player weapon cooldown: %d\n", weapon[0].cooldown);
+    printf("Player anim cooldown: %d\n", weapon[0].animCooldown);
     if(state.playerstate != PLAYER_BLOCKING && keystate(KEY_SPACE) && weapon[0].cooldown <= 0)
     {
       // attack
@@ -738,7 +735,6 @@ int main(int argc, char* argv[])
           state.score += totalDamage;
           printf("Attack hit. Enemy health: %d\n", enemy.health);
           printf("Weapon cooldown %d\n", weapon[0].cooldown);
-          printf("Weapon attack speed  %d\n", weapon[0].attackSpeed);
           //TODO: play hit sfx
           
           if (enemy.health <= 0) {
@@ -759,7 +755,6 @@ int main(int argc, char* argv[])
 
     } else if (state.playerstate != PLAYER_ATTACKING && keystate(KEY_LSHIFT))
     {
-      // block -- only happens while key is held down
       state.playerstate = PLAYER_BLOCKING;
     } else {
       // not attacking or blocking
