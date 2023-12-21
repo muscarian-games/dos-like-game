@@ -179,10 +179,15 @@ double dmin( double a, double b ) { return a < b ? a : b; }
 int floor1 = 3;
 int floor2 = 4;
 int ceilingTexture = 5;
-int numTextures = 9;
+int numTextures = 10;
+int deadEnemyTexture = 10;
+int LOW_VOLUME = 32;
+int MID_VOLUME = 64;
+int HIGH_VOLUME = 128;
 
 void set_textures(uint8_t* texture[numTextures], int tw, int th, int palcount, uint8_t palette[768])
 {
+  // level tile textures
   texture[0] = loadgif( "files/meniskos/brick-wall-mono.gif", &tw, &th, &palcount, palette );
   texture[1] = loadgif( "files/meniskos/wood-wall-mono.gif", &tw, &th, &palcount, palette );
   texture[2] = loadgif( "files/meniskos/brick-wall-pillar-mono.gif", &tw, &th, &palcount, palette );
@@ -190,11 +195,16 @@ void set_textures(uint8_t* texture[numTextures], int tw, int th, int palcount, u
   texture[4] = loadgif( "files/meniskos/brick-floor-mono-2.gif", &tw, &th, &palcount, palette ); // floor 2
   texture[5] = loadgif( "files/meniskos/brick-ceiling-mono.gif", &tw, &th, &palcount, palette ); // ceiling
 
-  // load some mobile sprite textures
+  // worm enemy textures
   texture[6] = loadgif( "files/meniskos/worm_01.gif", &tw, &th, &palcount, palette );
   texture[7] = loadgif( "files/meniskos/worm_02.gif", &tw, &th, &palcount, palette );
+
+  // sword textures
   texture[8] = loadgif( "files/meniskos/sword.gif", &tw, &th, &palcount, palette );
   texture[9] = loadgif( "files/meniskos/sword_hit.gif", &tw, &th, &palcount, palette );
+
+  // dead sprite texture
+  texture[10] = loadgif( "files/meniskos/skull.gif", &tw, &th, &palcount, palette );
 }
 
 //TODO: associate tracks with levels?
@@ -233,9 +243,9 @@ bool can_move_to(double posX, double posY) {
   return worldMap[(int)(posX)][(int)(posY)] == false;
 }
 
-void play_sfx(struct sound_t* sfx[numSfx], int trackIdx) {
+void play_sfx(struct sound_t* sfx[numSfx], int trackIdx, int volume) {
   // play sfx on channel 2 (0 is music, 1 is sfx) at half volume (max 128)
-  playsound( 1, sfx[trackIdx], 0, 64);
+  playsound( 1, sfx[trackIdx], 0, volume);
 }
 
 int main(int argc, char* argv[])
@@ -475,13 +485,6 @@ int main(int argc, char* argv[])
       // Check if enemy is dead:
       if (enemy.state == DEAD) continue;
 
-      // If they died recently set them to dead:
-      if (enemy.state != DEAD && enemy.health <= 0) {
-        enemy.state = DEAD;
-        enemies[i] = enemy;
-        // TODO: set enemy sprite to dead sprite
-        continue;
-      }
 
       // Ensure we have grabbed the correct sprite (sprite data contains location data too):
       int spriteId = enemy.spriteId;
@@ -497,26 +500,34 @@ int main(int argc, char* argv[])
         }
       }
 
+      // If they died recently set them to dead:
+      if (enemy.state != DEAD && enemy.health <= 0) {
+        enemy.state = DEAD;
+        enemySprite.texture = deadEnemyTexture;
+        enemies[i] = enemy;
+        sprite[spriteIndex] = enemySprite;
+        continue;
+      }
+
       // Handle moving to and attacking player character:
       double distanceToPlayer = sqrt((state.posX - enemySprite.x) * (state.posX - enemySprite.x) + (state.posY - enemySprite.y) * (state.posY - enemySprite.y));
-      printf("Distance to player: %f\n", distanceToPlayer);
-      printf("Enemy state: %d\n", enemy.state);
+
       // Enemy is in a state where they can start/continue moving:
       if (enemy.state == IDLE || enemy.state == MOVING) {
         // Enemy sprites move to player if player within movementRange but not within attackRange:
         if (distanceToPlayer <= enemy.movementRange && distanceToPlayer > enemy.attackRange) {
           // Move enemy towards player
-          //TODO: play "alert" sfx
-          //TODO: Check for walls in the way, similar to player movement code?
+          //TODO: play "alert" sfx when making state transition from IDLE to MOVING.
           double moveDir = atan2(state.posY - enemySprite.y, state.posX - enemySprite.x);
           double speedPerFrame = enemy.movementSpeed / 60.0; // 60 fps
           double xMovement = cos(moveDir) * (speedPerFrame / (double)texWidth);
           double yMovement = sin(moveDir) * (speedPerFrame / (double)texWidth);
           printf("Enemy moving to player\n Enemy position: %f, %f\n Movedir %f\n xMovement %f\n yMovement %f\n", enemySprite.x, enemySprite.y, moveDir, xMovement, yMovement);
-          enemySprite.x = enemySprite.x + xMovement;
-          enemySprite.y = enemySprite.y + yMovement;
+          
+          // Prevents movement through walls. May want to keep track of where the player was last seen so the enemies "track" smartly
+          if(can_move_to(enemySprite.x + xMovement, enemySprite.y)) enemySprite.x = enemySprite.x + xMovement;
+          if(can_move_to(enemySprite.x, enemySprite.y + yMovement)) enemySprite.y = enemySprite.y + yMovement;
           enemy.state = MOVING;
-          printf("After move enemy position: %f, %f\n", enemySprite.x, enemySprite.y);
         } else {
           enemy.state = IDLE;
           printf("Enemy idle\n");
@@ -532,8 +543,6 @@ int main(int argc, char* argv[])
           //TODO: Sfx
         }
       }
-
-      printf("Enemy cooldown is %d\n", enemy.cooldown);
 
       //TODO: Set enemy sprite to attack telegraph
       //TODO: Start telegraph cooldown
@@ -578,9 +587,12 @@ int main(int argc, char* argv[])
     //after sorting the sprites, do the projection and draw them
     for(int i = 0; i < numSprites; i++)
     {
+      Sprite sp = sprite[spriteOrder[i]];
+      int textureIdx = sp.texture;
+      printf("Printing sprite texture %d\n", textureIdx);
       //translate sprite position to relative to camera
-      double spriteX = sprite[spriteOrder[i]].x - state.posX;
-      double spriteY = sprite[spriteOrder[i]].y - state.posY;
+      double spriteX = sp.x - state.posX;
+      double spriteY = sp.y - state.posY;
 
       //transform sprite with the inverse camera matrix
       // [ planeX   dirX ] -1                                       [ dirY      -dirX ]
@@ -624,13 +636,15 @@ int main(int argc, char* argv[])
         // 2) it's on the screen (left)
         // 3) it's on the screen (right)
         // 4) ZBuffer, with perpendicular distance
-        if (transformY > 0 && stripe > 0 && stripe < w && transformY < ZBuffer[stripe])
-        for (int y = drawStartY; y < drawEndY; y++) // for every pixel of the current stripe
-        {
-          int d = (y-vMoveScreen) * 256 - h * 128 + spriteHeight * 128; //256 and 128 factors to avoid floats
-          int texY = ((d * texHeight) / spriteHeight) / 256;
-          uint32_t color = texture[sprite[spriteOrder[i]].texture][texWidth * texY + texX]; // get current color from the texture
-          if ((color & 0x00FFFFFF) != 0) buffer[ stripe + w * y ] = (uint8_t)color; // paint pixel if it isn't black, black is the invisible color
+        if (transformY > 0 && stripe > 0 && stripe < w && transformY < ZBuffer[stripe]) {
+          for (int y = drawStartY; y < drawEndY; y++) // for every pixel of the current stripe
+          {
+            int d = (y-vMoveScreen) * 256 - h * 128 + spriteHeight * 128; //256 and 128 factors to avoid floats
+            int texY = ((d * texHeight) / spriteHeight) / 256;
+
+            uint32_t color = texture[textureIdx][texWidth * texY + texX]; // get current color from the texture
+            if ((color & 0x00FFFFFF) != 0) buffer[ stripe + w * y ] = (uint8_t)color; // paint pixel if it isn't black, black is the invisible color
+          }
         }
       }
     }
@@ -756,7 +770,7 @@ int main(int argc, char* argv[])
           state.score += totalDamage;
           printf("Attack hit. Enemy health: %d\n", enemy.health);
           printf("Weapon cooldown %d\n", weapon[0].cooldown);
-          play_sfx(sfx, weapon[0].attackSfx);
+          play_sfx(sfx, weapon[0].attackSfx, LOW_VOLUME);
           if (enemy.health <= 0) {
             // Enemy is dead, so set state to dead and set sprite to dead sprite
             enemy.state = DEAD;
@@ -765,7 +779,7 @@ int main(int argc, char* argv[])
           }
         } else {
           printf("attack missed");
-          play_sfx(sfx, weapon[0].missSfx);
+          play_sfx(sfx, weapon[0].missSfx, MID_VOLUME);
         }
 
         // To update enemy:
