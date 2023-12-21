@@ -233,6 +233,11 @@ bool can_move_to(double posX, double posY) {
   return worldMap[(int)(posX)][(int)(posY)] == false;
 }
 
+void play_sfx(struct sound_t* sfx[numSfx], int trackIdx) {
+  // play sfx on channel 2 (0 is music, 1 is sfx) at half volume (max 128)
+  playsound( 1, sfx[trackIdx], 0, 64);
+}
+
 int main(int argc, char* argv[])
 {
   (void) argc, (void) argv;
@@ -751,8 +756,7 @@ int main(int argc, char* argv[])
           state.score += totalDamage;
           printf("Attack hit. Enemy health: %d\n", enemy.health);
           printf("Weapon cooldown %d\n", weapon[0].cooldown);
-          // play hit sound on channel 2 (0 is music, 1 is sfx) at half volume (max 128)
-          playsound( 1, sfx[weapon[0].attackSfx], 0, 64 );
+          play_sfx(sfx, weapon[0].attackSfx);
           if (enemy.health <= 0) {
             // Enemy is dead, so set state to dead and set sprite to dead sprite
             enemy.state = DEAD;
@@ -761,8 +765,7 @@ int main(int argc, char* argv[])
           }
         } else {
           printf("attack missed");
-          //TODO: play whiff sfx
-          playsound( 1, sfx[weapon[0].missSfx], 0, 64 );
+          play_sfx(sfx, weapon[0].missSfx);
         }
 
         // To update enemy:
