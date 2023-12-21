@@ -659,8 +659,8 @@ int main(int argc, char* argv[])
     // move backwards if no wall behind you
     if(keystate(KEY_DOWN))
     {
-      if(worldMap[(int)(state.posX - state.dirX * moveSpeed)][(int)(state.posY)] == false) state.posX -= state.dirX * moveSpeed;
-      if(worldMap[(int)(state.posX)][(int)(state.posY - state.dirY * moveSpeed)] == false) state.posY -= state.dirY * moveSpeed;
+      if(can_move_to(state.posX - state.dirX * moveSpeed, state.posY)) state.posX -= state.dirX * moveSpeed;
+      if(can_move_to(state.posX, state.posY - state.dirY * moveSpeed)) state.posY -= state.dirY * moveSpeed;
     }
     // rotate to the right
     if(keystate(KEY_RIGHT))
