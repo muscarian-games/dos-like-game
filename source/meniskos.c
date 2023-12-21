@@ -122,12 +122,14 @@ typedef struct Weapon {
   int cooldown;
   int animCooldown; // consistently like 24 frames?
   double attackSpeed;
+  int attackSfx;
+  int missSfx;
 } Weapon;
 
 int weaponAnimCooldown = 12; // frames
 
 Weapon weapon[1] = {
-  { 8, 9, 10, 1, 0, 0, 0.5 } // sword
+  { 8, 9, 10, 1, 0, 0, 0.5, 0, 1 } // sword
 };
 
 typedef enum EnemyStateType {
@@ -203,6 +205,12 @@ void load_music(struct music_t* music[numTracks]) {
   music[1] = loadmid( "files/sound/meniskos_2c.mid" ); // dungeon
 }
 
+int numSfx = 2;
+void load_sfx(struct sound_t* sfx[numSfx]) {
+  sfx[0] = loadwav( "files/sound/sword_hit.wav" );
+  sfx[1] = loadwav( "files/sound/sword_miss.wav" );
+}
+
 void set_positions() {
   // posX = 4.0, posY = 2.5; // x and y start position, starting from (???) -- i think x,y is top left, let us start player in top right always to prevent weird look dir
   // dirX = -1.0, dirY = 0.0; // initial direction vector -- this can be messed with to fuck up player perspective but doesn't really change just the look dir... :|
@@ -242,6 +250,9 @@ int main(int argc, char* argv[])
   struct music_t* music[numTracks];
   load_music(music);
   playmusic( music[1], 1, 255 );
+
+  struct sound_t* sfx[numSfx];
+  load_sfx(sfx);
 
   for( int i = 0; i < palcount; ++i ) {
       setpal(i, palette[ 3 * i + 0 ], palette[ 3 * i + 1 ], palette[ 3 * i + 2 ] );
@@ -735,8 +746,8 @@ int main(int argc, char* argv[])
           state.score += totalDamage;
           printf("Attack hit. Enemy health: %d\n", enemy.health);
           printf("Weapon cooldown %d\n", weapon[0].cooldown);
-          //TODO: play hit sfx
-          
+          // play hit sound on channel 2 (0 is music, 1 is sfx) at half volume (max 128)
+          playsound( 1, sfx[weapon[0].attackSfx], 0, 64 );
           if (enemy.health <= 0) {
             // Enemy is dead, so set state to dead and set sprite to dead sprite
             enemy.state = DEAD;
@@ -746,6 +757,7 @@ int main(int argc, char* argv[])
         } else {
           printf("attack missed");
           //TODO: play whiff sfx
+          playsound( 1, sfx[weapon[0].missSfx], 0, 64 );
         }
 
         // To update enemy:
