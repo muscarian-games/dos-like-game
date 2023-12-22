@@ -101,7 +101,7 @@ typedef struct GameState
   double pitch;
 } GameState;
 
-const GameStateType startingState = PLAYING;
+const GameStateType startingState = MENU;
 GameState state = { startingState, PLAYER_NORMAL, 0, 0, 100, 100 };
 
 typedef struct Sprite
@@ -753,6 +753,7 @@ int main(int argc, char* argv[])
             sprite[i] = spr;
             gemPickedUp = true;
             //TODO: Once there are more than one gem(s), check to see if any gems remaining before win condition.
+            state.state = WIN;
           }
         }
       }
@@ -836,9 +837,19 @@ int main(int argc, char* argv[])
 
       if(keystate(KEY_ESCAPE)) break;
     } else if (state.state == MENU) {
+      centertextxy( 12, 12, "Press Space to Start", 100 );
+      if(keystate(KEY_SPACE)) {
+        state.state = PLAYING;
+      }
     } else if (state.state == PAUSED) {
     } else if (state.state == GAMEOVER) {
     } else if (state.state == WIN) {
+      // Print score
+      static char scoreString[32];
+      snprintf(scoreString, 12, "SCORE: %d", state.score);
+      centertextxy(12, 12, scoreString, 100);
+      // Print "You win!"
+      centertextxy(12, 24, "You win!", 100);
     }
   }
   return 0;
