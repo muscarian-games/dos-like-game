@@ -112,12 +112,15 @@ typedef struct Sprite
   int id;
 } Sprite;
 
-#define numSprites 2
+#define numSprites 5
 
 Sprite sprite[numSprites] =
 {
   { 5.5, 6.5, 6, 1 }, // Worm enemy
-  { 4.5, 2.5, 11, 2 } // Gem pickup
+  { 4.5, 7.5, 11, 2 }, // Gem pickup
+  { 1.5, 5.5, 6, 3 }, // Second worm enemy
+  { 2.5, 7.5, 6, 4 }, // Third worm enemy
+  { 5.5, 4.5, 6, 5 } // Fourth worm enemy
 };
 
 typedef struct Weapon {
@@ -161,10 +164,13 @@ typedef struct Enemy
   int attackTexture;
 } Enemy;
 
-const int numEnemies = 1;
+const int numEnemies = 4;
 
-Enemy enemies[1] = {
-  { 30, 10, IDLE, 12.0, 12.0, 1.0, 3, 2, 1, 0, 6, 7 }
+Enemy enemies[numEnemies] = {
+  { 30, 10, IDLE, 12.0, 12.0, 1.0, 3, 2, 1, 0, 6, 7 },
+  { 30, 10, IDLE, 12.0, 12.0, 1.0, 3, 2, 3, 0, 6, 7 },
+  { 30, 10, IDLE, 12.0, 12.0, 1.0, 3, 2, 4, 0, 6, 7 },
+  { 30, 10, IDLE, 12.0, 12.0, 1.0, 3, 2, 5, 0, 6, 7 }
 };
 
 //1D Zbuffer
@@ -184,8 +190,10 @@ double dmin( double a, double b ) { return a < b ? a : b; }
 int floor1 = 3;
 int floor2 = 4;
 int ceilingTexture = 5;
-int numTextures = 12;
+int numTextures = 11;
 int deadEnemyTexture = 10;
+int gemTexture = 11;
+bool gemPickedUp = false;
 
 void set_textures(uint8_t* texture[numTextures], int tw, int th, int palcount, uint8_t palette[768])
 {
@@ -211,8 +219,8 @@ void set_textures(uint8_t* texture[numTextures], int tw, int th, int palcount, u
   // gem pickup texture
   texture[11] = loadgif( "files/meniskos/gem.gif", &tw, &th, &palcount, palette );
 
-  // empty space texture
-  texture[12] = loadgif( "files/meniskos/empty.gif", &tw, &th, &palcount, palette );
+  // // empty space texture
+  // texture[12] = loadgif( "files/meniskos/empty.gif", &tw, &th, &palcount, palette );
 }
 
 //TODO: associate tracks with levels?
@@ -382,6 +390,11 @@ int main(int argc, char* argv[])
           }
         }
       }
+
+      // which box of the map we're in
+      int mapX = (int)(state.posX);
+      int mapY = (int)(state.posY);
+      printf("We are in box %d, %d\n", mapX, mapY);
 
       // now WALL CASTING algo
       for(int x = 0; x < w; x++)
@@ -601,11 +614,13 @@ int main(int argc, char* argv[])
       // after sorting the sprites, do the projection and draw them
       for(int i = 0; i < numSprites; i++)
       {
-        Sprite sp = sprite[spriteOrder[i]];
-        int textureIdx = sp.texture;
+        Sprite spr = sprite[spriteOrder[i]];
+        int textureIdx = spr.texture;
+        if (gemPickedUp && textureIdx == gemTexture) continue; // do not draw gem if picked up
+
         //translate sprite position to relative to camera
-        double spriteX = sp.x - state.posX;
-        double spriteY = sp.y - state.posY;
+        double spriteX = spr.x - state.posX;
+        double spriteY = spr.y - state.posY;
 
         //transform sprite with the inverse camera matrix
         // [ planeX   dirX ] -1                                       [ dirY      -dirX ]
@@ -731,14 +746,13 @@ int main(int argc, char* argv[])
       // Handle gem pickups:
       for (int i = 0; i < numSprites; i++) {
         Sprite spr = sprite[i];
-        if (spr.texture == 11) {
+        if (spr.texture == gemTexture && !gemPickedUp) {
           if ((int)spr.x == (int)state.posX && (int)spr.y == (int)state.posY) {
             //TODO: Play sfx
             state.score += 100;
-            spr.texture = 12;
             sprite[i] = spr;
-
-            //TODO: Check to see if any gems remaining before win condition.
+            gemPickedUp = true;
+            //TODO: Once there are more than one gem(s), check to see if any gems remaining before win condition.
           }
         }
       }
