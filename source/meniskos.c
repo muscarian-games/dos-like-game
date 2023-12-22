@@ -832,7 +832,10 @@ int main(int argc, char* argv[])
       }
 
     } else if (state.state == MENU) {
-      centertextxy( 12, 12, "Press Enter to Start", 100 );
+      centertextxy(0, texHeight * 4, "Trials of", screenWidth );
+      centertextxy(0, texHeight * 5, "Meniskos", screenWidth );
+      centertextxy(0, texHeight * 9, "Press Enter to Start", screenWidth );
+      centertextxy(0, texHeight * 10, "Press Escape to Quit", screenWidth );
       if(keystate(KEY_RETURN)) {
         state.state = PLAYING;
       }
