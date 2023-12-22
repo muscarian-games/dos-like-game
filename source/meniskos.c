@@ -61,6 +61,10 @@ int worldMap[mapWidth][mapHeight] =
   {3,3,3,3,3,3,3,3,3,3}
 };
 
+/**
+ * State enums
+*/
+
 typedef enum GameStateType {
   MENU,
   PLAYING,
@@ -75,6 +79,9 @@ typedef enum PlayerStateType {
   PLAYER_BLOCKING, // moves slowly while blocking, attack interrupts block
 } PlayerStateType;
 
+/**
+ * Game and entity state structs
+*/
 typedef struct GameState
 {
   GameStateType state;
@@ -103,7 +110,6 @@ typedef struct Sprite
   double x;
   double y; // is y=0 top left or?
   int texture;
-  int frames;
   int id;
 } Sprite;
 
@@ -111,7 +117,7 @@ typedef struct Sprite
 
 Sprite sprite[numSprites] =
 {
-  {5.5, 6.5, 6, 2, 1} // Worm enemy
+  { 5.5, 6.5, 6, 1 } // Worm enemy
 };
 
 typedef struct Weapon {
@@ -145,7 +151,7 @@ typedef struct Enemy
   int damage;
   EnemyStateType state;
   double movementRange; // moves to player when player in range, in tiles
-  double movementSpeed; // how many frames to move 1 pixel //TODO: Compare to how player speed is handled
+  double movementSpeed; // how many frames to move 1 pixel
   double attackRange; // attacks player when player in range, in tiles
   int attackCooldown; // how long in frames between attacks
   int attackSpeed; // how long in frames between attack telegraph (frame 2 of gif) and actual attack
@@ -153,13 +159,12 @@ typedef struct Enemy
   int cooldown; // how long in frames until next action
   int normalTexture;
   int attackTexture;
-  int deadTexture;
 } Enemy;
 
 const int numEnemies = 1;
 
 Enemy enemies[1] = {
-  { 100, 10, IDLE, 12.0, 12.0, 1.0, 3, 2, 1, 0, 6, 7, 6 }
+  { 30, 10, IDLE, 12.0, 12.0, 1.0, 3, 2, 1, 0, 6, 7 }
 };
 
 //1D Zbuffer
@@ -485,7 +490,6 @@ int main(int argc, char* argv[])
       // Check if enemy is dead:
       if (enemy.state == DEAD) continue;
 
-
       // Ensure we have grabbed the correct sprite (sprite data contains location data too):
       int spriteId = enemy.spriteId;
       int spriteIndex = 0;
@@ -522,7 +526,6 @@ int main(int argc, char* argv[])
           double speedPerFrame = enemy.movementSpeed / 60.0; // 60 fps
           double xMovement = cos(moveDir) * (speedPerFrame / (double)texWidth);
           double yMovement = sin(moveDir) * (speedPerFrame / (double)texWidth);
-          printf("Enemy moving to player\n Enemy position: %f, %f\n Movedir %f\n xMovement %f\n yMovement %f\n", enemySprite.x, enemySprite.y, moveDir, xMovement, yMovement);
           
           // Prevents movement through walls. May want to keep track of where the player was last seen so the enemies "track" smartly
           if(can_move_to(enemySprite.x + xMovement, enemySprite.y)) enemySprite.x = enemySprite.x + xMovement;
@@ -530,39 +533,34 @@ int main(int argc, char* argv[])
           enemy.state = MOVING;
         } else {
           enemy.state = IDLE;
-          printf("Enemy idle\n");
         }
 
         if (enemy.state == IDLE && distanceToPlayer <= enemy.attackRange && enemy.cooldown <= 0) {
           // Enemy is in range to attack player, so start attack telegraph
           //TODO: play attack sfx
           enemy.state = ATTACKING;
-          printf("Enemy attacking (telegraph)\n");
           enemySprite.texture = enemy.attackTexture;
           enemy.cooldown = enemy.attackSpeed * 60.0;
           //TODO: Sfx
         }
       }
 
-      //TODO: Set enemy sprite to attack telegraph
-      //TODO: Start telegraph cooldown
-      //TODO: Check post-attack cooldown too?
-      //TODO: State machine?
       if (enemy.state == ATTACKING) {
         if (distanceToPlayer <= enemy.attackRange && enemy.cooldown <= 0) {
-          // Deal damage to player
-          printf("Enemy attacking (deal damage)\n");
           //TODO: play hit sfx based on blocking vs. not
+          // Set up cooldown:
           enemy.cooldown = enemy.attackCooldown * 60.0;
+
+          // Deal damage to health/score:
           int totalDamage = state.playerstate == PLAYER_BLOCKING ? enemy.damage / 2 : enemy.damage;
           state.health -= totalDamage;
           state.score -= totalDamage;
-          printf("Player health: %d\n", state.health);
+
+          // Set state back to idle after attack completes:
           enemy.state = IDLE;
           enemySprite.texture = enemy.normalTexture;
         } else if (distanceToPlayer > enemy.attackRange) {
-          printf("Player out of attack range now, idling");
-          // Enemy is out of attack range, so stop attack telegraph
+          // Enemy is out of attack range, so stop attack telegraph:
           enemy.state = IDLE;
           enemySprite.texture = enemy.normalTexture;
         }
@@ -584,12 +582,11 @@ int main(int argc, char* argv[])
     }
     sortSprites(spriteOrder, spriteDistance, numSprites);
 
-    //after sorting the sprites, do the projection and draw them
+    // after sorting the sprites, do the projection and draw them
     for(int i = 0; i < numSprites; i++)
     {
       Sprite sp = sprite[spriteOrder[i]];
       int textureIdx = sp.texture;
-      printf("Printing sprite texture %d\n", textureIdx);
       //translate sprite position to relative to camera
       double spriteX = sp.x - state.posX;
       double spriteY = sp.y - state.posY;
@@ -672,10 +669,10 @@ int main(int argc, char* argv[])
     buffer = swapbuffers();
     // No need to clear the screen here, since everything is overdrawn with floor and ceiling
 
-    //timing for input and FPS counter
+    // timing for input and FPS counter
     double frameTime = 1.0 / 60.0; //frametime is the time this frame has taken, in seconds
 
-    //speed modifiers
+    // speed modifiers
     double speedModifier = state.playerstate == PLAYER_BLOCKING ? 0.5 : 1.0;
     double moveSpeed = frameTime * 3.0 * speedModifier; //the constant value is in squares/order
     double rotSpeed = frameTime * 2.0 * speedModifier; //the constant value is in radians/order
@@ -725,10 +722,6 @@ int main(int argc, char* argv[])
     } 
 
     // Handle attack/block
-    printf("Checking for attack\n");
-    printf("Player state: %d\n", state.playerstate == PLAYER_ATTACKING);
-    printf("Player weapon cooldown: %d\n", weapon[0].cooldown);
-    printf("Player anim cooldown: %d\n", weapon[0].animCooldown);
     if(state.playerstate != PLAYER_BLOCKING && keystate(KEY_SPACE) && weapon[0].cooldown <= 0)
     {
       // attack
@@ -768,14 +761,14 @@ int main(int argc, char* argv[])
           int totalDamage = weapon[0].damage;
           enemy.health -= totalDamage;
           state.score += totalDamage;
-          printf("Attack hit. Enemy health: %d\n", enemy.health);
-          printf("Weapon cooldown %d\n", weapon[0].cooldown);
           play_sfx(sfx, weapon[0].attackSfx, LOW_VOLUME);
           if (enemy.health <= 0) {
+            printf("Before death setting code");
             // Enemy is dead, so set state to dead and set sprite to dead sprite
             enemy.state = DEAD;
-            sprite[spriteIndex].texture = enemy.deadTexture;
+            enemySprite.texture = deadEnemyTexture;
             //TODO: play death sfx
+            printf("After death setting code");
           }
         } else {
           printf("attack missed");
@@ -784,7 +777,8 @@ int main(int argc, char* argv[])
 
         // To update enemy:
         enemies[i] = enemy;
-
+        sprite[spriteIndex] = enemySprite;
+        printf("After enemy update");
       }
 
     } else if (state.playerstate != PLAYER_ATTACKING && keystate(KEY_LSHIFT))
