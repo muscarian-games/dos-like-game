@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdbool.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 #include "dos.h"
 
 #define screenWidth 320
@@ -90,7 +91,9 @@ typedef struct GameState
   int score;
   int health;
   int stamina;
-  int track; // music playing, -1 is init/none
+  // music playing, -1 is init/none
+  int track;
+  int staminaCooldown;
   // Player position
   double posX;
   double posY;
@@ -103,7 +106,11 @@ typedef struct GameState
 } GameState;
 
 const GameStateType startingState = MENU;
-GameState state = { startingState, PLAYER_NORMAL, 0, 0, 100, 100, -1 };
+const int startingLevel = 0;
+const int maxHealth = 10;
+const int maxStamina = 5;
+const int initTrack = -1;
+GameState state = { startingState, PLAYER_NORMAL, startingLevel, 0, maxHealth, maxStamina, initTrack, 0 };
 
 typedef struct Sprite
 {
@@ -139,7 +146,7 @@ typedef struct Weapon {
 int weaponAnimCooldown = 12; // frames
 
 Weapon weapon[1] = {
-  { 8, 9, 10, 1, 0, 0, 0.5, 0, 1 } // sword
+  { 8, 9, 1, 1, 0, 0, 0.5, 0, 1 } // sword
 };
 
 typedef enum EnemyStateType {
@@ -168,10 +175,10 @@ typedef struct Enemy
 const int numEnemies = 4;
 
 Enemy enemies[numEnemies] = {
-  { 30, 10, IDLE, 12.0, 12.0, 1.0, 3, 2, 1, 0, 6, 7 },
-  { 30, 10, IDLE, 12.0, 12.0, 1.0, 3, 2, 3, 0, 6, 7 },
-  { 30, 10, IDLE, 12.0, 12.0, 1.0, 3, 2, 4, 0, 6, 7 },
-  { 30, 10, IDLE, 12.0, 12.0, 1.0, 3, 2, 5, 0, 6, 7 }
+  { 3, 1, IDLE, 12.0, 12.0, 1.0, 3, 2, 1, 0, 6, 7 },
+  { 3, 1, IDLE, 12.0, 12.0, 1.0, 3, 2, 3, 0, 6, 7 },
+  { 3, 1, IDLE, 12.0, 12.0, 1.0, 3, 2, 4, 0, 6, 7 },
+  { 3, 1, IDLE, 12.0, 12.0, 1.0, 3, 2, 5, 0, 6, 7 }
 };
 
 //1D Zbuffer
@@ -699,13 +706,23 @@ int main(int argc, char* argv[])
 
 
       // Show UI overlay
-      static char healthString[32];
-      snprintf(healthString, 12, "HEALTH: %d", state.health);
-      centertextxy(12, 12, healthString, 100);
+      
+      char uiString[32] = "HP: ";
+      for (int i = 0; i < maxHealth; i++) {
+        if (i < state.health) strcat(uiString, "O");
+        else strcat(uiString, "-");
+      }
+
+      strcat(uiString, " ST: ");
+      for (int i = 0; i < maxStamina; i++) {
+        if (i < state.stamina) strcat(uiString, "O");
+        else strcat(uiString, "-");
+      }
+      centertextxy(0, 24, uiString, 240);
 
       static char scoreString[32];
       snprintf(scoreString, 12, "SCORE: %d", state.score);
-      centertextxy(12, 24, scoreString, 100);
+      centertextxy(12, 36, scoreString, 100);
 
       buffer = swapbuffers();
       // No need to clear the screen here, since everything is overdrawn with floor and ceiling
@@ -719,16 +736,19 @@ int main(int argc, char* argv[])
       double rotSpeed = frameTime * 2.0 * speedModifier; //the constant value is in radians/order
 
       // move forward if no wall in front of you
+      // moving forward/back will slow the stamina cooldown
       if (keystate(KEY_UP))
       {
         if(can_move_to(state.posX + state.dirX * moveSpeed*5, state.posY)) state.posX += state.dirX * moveSpeed;
         if(can_move_to(state.posX, state.posY + state.dirY * moveSpeed*5)) state.posY += state.dirY * moveSpeed;
+        state.staminaCooldown += 1;
       }
       // move backwards if no wall behind you
       if(keystate(KEY_DOWN))
       {
         if(can_move_to(state.posX - state.dirX * moveSpeed, state.posY)) state.posX -= state.dirX * moveSpeed;
         if(can_move_to(state.posX, state.posY - state.dirY * moveSpeed)) state.posY -= state.dirY * moveSpeed;
+        state.staminaCooldown += 1;
       }
       // rotate to the right
       if(keystate(KEY_RIGHT))
@@ -777,11 +797,21 @@ int main(int argc, char* argv[])
         weapon[0].cooldown -= 1;
       } 
 
+      // Handle stamina cooldown and restore:
+      if (state.staminaCooldown > 0 && state.stamina != maxStamina) {
+        state.staminaCooldown -= state.playerstate == PLAYER_BLOCKING || state.playerstate == PLAYER_ATTACKING ? 1 : 2;
+      } else if (state.staminaCooldown <= 0 && state.stamina < maxStamina) {
+        state.stamina += 1;
+        state.staminaCooldown = 120;
+      }
+
       // Handle attack/block
-      if(state.playerstate != PLAYER_BLOCKING && keystate(KEY_SPACE) && weapon[0].cooldown <= 0)
+      if(state.playerstate != PLAYER_BLOCKING && keystate(KEY_SPACE) && weapon[0].cooldown <= 0 && state.stamina > 0)
       {
         // attack
         state.playerstate = PLAYER_ATTACKING;
+        state.stamina -= 1;
+        state.staminaCooldown = 120;
 
         // start attack animation cooldown
         weapon[0].animCooldown = weaponAnimCooldown;
