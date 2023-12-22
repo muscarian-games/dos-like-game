@@ -809,22 +809,18 @@ int main(int argc, char* argv[])
             state.score += totalDamage;
             play_sfx(sfx, weapon[0].attackSfx, LOW_VOLUME);
             if (enemy.health <= 0) {
-              printf("Before death setting code");
               // Enemy is dead, so set state to dead and set sprite to dead sprite
               enemy.state = DEAD;
               enemySprite.texture = deadEnemyTexture;
               //TODO: play death sfx
-              printf("After death setting code");
             }
           } else {
-            printf("attack missed");
             play_sfx(sfx, weapon[0].missSfx, MID_VOLUME);
           }
 
           // To update enemy:
           enemies[i] = enemy;
           sprite[spriteIndex] = enemySprite;
-          printf("After enemy update");
         }
 
       } else if (state.playerstate != PLAYER_ATTACKING && keystate(KEY_LSHIFT))
@@ -835,22 +831,28 @@ int main(int argc, char* argv[])
         state.playerstate = PLAYER_NORMAL;
       }
 
-      if(keystate(KEY_ESCAPE)) break;
     } else if (state.state == MENU) {
-      centertextxy( 12, 12, "Press Space to Start", 100 );
-      if(keystate(KEY_SPACE)) {
+      centertextxy( 12, 12, "Press Enter to Start", 100 );
+      if(keystate(KEY_RETURN)) {
         state.state = PLAYING;
       }
+      buffer = swapbuffers();
+    //FIXME: In these states, text does not print on screen :sad:
     } else if (state.state == PAUSED) {
     } else if (state.state == GAMEOVER) {
     } else if (state.state == WIN) {
+      //FIXME:  Clear screen?
       // Print score
       static char scoreString[32];
       snprintf(scoreString, 12, "SCORE: %d", state.score);
       centertextxy(12, 12, scoreString, 100);
       // Print "You win!"
       centertextxy(12, 24, "You win!", 100);
+      buffer = swapbuffers();
     }
+
+    // In any game state, escape will exit the game loop:
+    if(keystate(KEY_ESCAPE)) break;
   }
   return 0;
 }
