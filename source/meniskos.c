@@ -90,6 +90,7 @@ typedef struct GameState
   int score;
   int health;
   int stamina;
+  int track; // music playing, -1 is init/none
   // Player position
   double posX;
   double posY;
@@ -102,7 +103,7 @@ typedef struct GameState
 } GameState;
 
 const GameStateType startingState = MENU;
-GameState state = { startingState, PLAYER_NORMAL, 0, 0, 100, 100 };
+GameState state = { startingState, PLAYER_NORMAL, 0, 0, 100, 100, -1 };
 
 typedef struct Sprite
 {
@@ -267,6 +268,13 @@ void play_sfx(struct sound_t* sfx[numSfx], int trackIdx, int volume) {
   playsound( 1, sfx[trackIdx], 0, volume);
 }
 
+void play_track(struct music_t* music[numTracks], int trackIdx) {
+  if (state.track != trackIdx) {
+    playmusic( music[trackIdx], 1, 255 );
+    state.track = trackIdx;
+  }
+}
+
 int main(int argc, char* argv[])
 {
   (void) argc, (void) argv;
@@ -299,11 +307,6 @@ int main(int argc, char* argv[])
   struct sound_t* sfx[numSfx];
   load_sfx(sfx);
 
-  /**
-   * Start init code that is ran once on PLAYING state init:
-  */
-  playmusic( music[1], 1, 255 );
-
   // Start screenbuffer:
   uint8_t* buffer = screenbuffer();
 
@@ -312,6 +315,7 @@ int main(int argc, char* argv[])
   {
     waitvbl();
     if (state.state == PLAYING) {
+      play_track(music, 1);
       // uses FLOOR CASTING algo
       for(int y = 0; y < screenHeight; ++y)
       {
@@ -585,6 +589,12 @@ int main(int argc, char* argv[])
             state.health -= totalDamage;
             state.score -= totalDamage;
 
+            if (state.health <= 0) {
+              // Play death SFX;
+              state.state = GAMEOVER;
+              break;
+            }
+
             // Set state back to idle after attack completes:
             enemy.state = IDLE;
             enemySprite.texture = enemy.normalTexture;
@@ -832,6 +842,7 @@ int main(int argc, char* argv[])
       }
 
     } else if (state.state == MENU) {
+      play_track(music, 0);
       centertextxy(0, texHeight * 4, "Trials of", screenWidth );
       centertextxy(0, texHeight * 5, "Meniskos", screenWidth );
       centertextxy(0, texHeight * 9, "Press Enter to Start", screenWidth );
@@ -843,13 +854,19 @@ int main(int argc, char* argv[])
     //FIXME: In these states, text does not print on screen :sad:
     } else if (state.state == PAUSED) {
     } else if (state.state == GAMEOVER) {
+      clearscreen();
+      // Print score
+      static char scoreString[32];
+      snprintf(scoreString, 12, "SCORE: %d", state.score);
+      centertextxy(12, 12, scoreString, 100);
+      centertextxy(12, 24, "You died.", 100);
+      buffer = swapbuffers();
     } else if (state.state == WIN) {
       clearscreen();
       // Print score
       static char scoreString[32];
       snprintf(scoreString, 12, "SCORE: %d", state.score);
       centertextxy(12, 12, scoreString, 100);
-      // Print "You win!"
       centertextxy(12, 24, "You win!", 100);
       buffer = swapbuffers();
     }
