@@ -844,7 +844,7 @@ int main(int argc, char* argv[])
     } else if (state.state == PAUSED) {
     } else if (state.state == GAMEOVER) {
     } else if (state.state == WIN) {
-      //FIXME:  Clear screen?
+      clearscreen();
       // Print score
       static char scoreString[32];
       snprintf(scoreString, 12, "SCORE: %d", state.score);
