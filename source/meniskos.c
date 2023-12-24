@@ -286,10 +286,15 @@ bool can_move_to(double posX, double posY)
 int LOW_VOLUME = 24;
 int MID_VOLUME = 48;
 int HIGH_VOLUME = 76;
+int currentChannel = 0;
+const int maxChannel = 15;
 void play_sfx(struct sound_t *sfx[numSfx], int trackIdx, int volume)
 {
-  // play sfx on channel 2 (0 is music, 1 is sfx) at half volume (max 128)
-  playsound(1, sfx[trackIdx], 0, volume);
+  // Play sfx at a given volume, rotating channels:
+  playsound(currentChannel, sfx[trackIdx], 0, volume);
+  currentChannel++;
+  if (currentChannel > maxChannel)
+    currentChannel = 0;
 }
 
 void play_track(struct music_t *music[numTracks], int trackIdx)
