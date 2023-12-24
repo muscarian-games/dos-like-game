@@ -173,15 +173,19 @@ typedef struct Enemy
   int cooldown;         // how long in frames until next action
   int normalTexture;
   int attackTexture;
+  int alertSfx;
+  int telegraphSfx;
+  int attackSfx;
 } Enemy;
 
 const int numEnemies = 4;
 
+//TODO: Create a prototype system for less duplication of enemies attrs
 Enemy enemies[numEnemies] = { // Oops! All snakes.
-    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 1, 0, 6, 7},
-    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 3, 0, 6, 7},
-    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 4, 0, 6, 7},
-    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 5, 0, 6, 7}};
+    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 1, 0, 6, 7, 2, 3, 4},
+    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 3, 0, 6, 7, 2, 3, 4},
+    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 4, 0, 6, 7, 2, 3, 4},
+    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 5, 0, 6, 7, 2, 3, 4}};
 
 // 1D Zbuffer
 double ZBuffer[screenWidth];
@@ -242,11 +246,14 @@ void load_music(struct music_t *music[numTracks])
   music[1] = loadmid("files/sound/meniskos_2c.mid"); // dungeon
 }
 
-int numSfx = 2;
+int numSfx = 5;
 void load_sfx(struct sound_t *sfx[numSfx])
 {
   sfx[0] = loadwav("files/sound/sword_hit.wav");
   sfx[1] = loadwav("files/sound/sword_miss.wav");
+  sfx[2] = loadwav("files/sound/hiss.wav");
+  sfx[3] = loadwav("files/sound/hiss_telegraph.wav");
+  sfx[4] = loadwav("files/sound/hiss_attack.wav");
 }
 
 void set_positions()
@@ -594,7 +601,6 @@ int main(int argc, char *argv[])
           if (distanceToPlayer <= enemy.movementRange && distanceToPlayer > enemy.attackRange)
           {
             // Move enemy towards player
-            // TODO: play "alert" sfx when making state transition from IDLE to MOVING.
             double moveDir = atan2(state.posY - enemySprite.y, state.posX - enemySprite.x);
             double speedPerFrame = enemy.movementSpeed / 60.0; // 60 fps
             double xMovement = cos(moveDir) * (speedPerFrame / (double)texWidth);
@@ -605,6 +611,12 @@ int main(int argc, char *argv[])
               enemySprite.x = enemySprite.x + xMovement;
             if (can_move_to(enemySprite.x, enemySprite.y + yMovement))
               enemySprite.y = enemySprite.y + yMovement;
+
+            // Handle state transition
+            if (enemy.state == IDLE) {
+              // Play alert sfx
+              play_sfx(sfx, enemy.alertSfx, LOW_VOLUME);
+            }
             enemy.state = MOVING;
           }
           else
@@ -615,11 +627,10 @@ int main(int argc, char *argv[])
           if (enemy.state == IDLE && distanceToPlayer <= enemy.attackRange && enemy.cooldown <= 0)
           {
             // Enemy is in range to attack player, so start attack telegraph
-            // TODO: play attack sfx
+            play_sfx(sfx, enemy.telegraphSfx, LOW_VOLUME);
             enemy.state = ATTACKING;
             enemySprite.texture = enemy.attackTexture;
             enemy.cooldown = enemy.attackSpeed * 60.0;
-            // TODO: Sfx
           }
         }
 
@@ -627,7 +638,7 @@ int main(int argc, char *argv[])
         {
           if (distanceToPlayer <= enemy.attackRange && enemy.cooldown <= 0)
           {
-            // TODO: play hit sfx based on blocking vs. not
+            play_sfx(sfx, enemy.attackSfx, MID_VOLUME);
             //  Set up cooldown:
             enemy.cooldown = enemy.attackCooldown * 60.0;
 
