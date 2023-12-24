@@ -812,7 +812,7 @@ int main(int argc, char *argv[])
           state.posX += state.dirX * moveSpeed;
         if (can_move_to(state.posX, state.posY + state.dirY * moveSpeed * 5))
           state.posY += state.dirY * moveSpeed;
-        state.staminaCooldown += 1;
+          state.staminaCooldown += 1;
       }
       // move backwards if no wall behind you
       if (keystate(KEY_DOWN))
@@ -878,7 +878,7 @@ int main(int argc, char *argv[])
       // Handle stamina cooldown and restore:
       if (state.staminaCooldown > 0 && state.stamina != maxStamina)
       {
-        state.staminaCooldown -= state.playerstate == PLAYER_BLOCKING || state.playerstate == PLAYER_ATTACKING ? 1 : 2;
+        state.staminaCooldown -= state.playerstate == PLAYER_BLOCKING || state.playerstate == PLAYER_ATTACKING ? 0 : 2;
       }
       else if (state.staminaCooldown <= 0 && state.stamina < maxStamina)
       {
@@ -889,12 +889,12 @@ int main(int argc, char *argv[])
       // Handle attack/block
       if (state.playerstate != PLAYER_BLOCKING && keystate(KEY_SPACE) && weapon[0].cooldown <= 0 && state.stamina > 0)
       {
-        // attack
+        // Attacking costs stamina and resets stamina cooldown
         state.playerstate = PLAYER_ATTACKING;
         state.stamina -= 1;
         state.staminaCooldown = 120;
 
-        // start attack animation cooldown
+        // Start attack animation cooldown
         weapon[0].animCooldown = weaponAnimCooldown;
         weapon[0].cooldown = weapon[0].attackSpeed * 60.0;
 
