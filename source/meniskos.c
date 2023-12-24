@@ -634,12 +634,15 @@ int main(int argc, char *argv[])
             /**
              * Deal damage to player health/stamina/score
              * To effectively block, player needs stamina.
-             * Blocking cuts damage in half, but does 1 point of stamina damage.
+             * Blocking cuts damage in half, but does 1 point of stamina damage and resets the stamina regen cooldown.
              * Players take 10x health damage as a penalty to their score.
              */
             bool effectiveBlocking = state.playerstate == PLAYER_BLOCKING && state.stamina > 0;
             int healthDamage = effectiveBlocking ? enemy.damage / 2 : enemy.damage;
             int staminaDamage = effectiveBlocking ? 1 : 0;
+            if (effectiveBlocking) {
+              state.staminaCooldown = 120;
+            }
             state.health -= healthDamage;
             state.stamina -= staminaDamage;
             state.score -= healthDamage * 10;
