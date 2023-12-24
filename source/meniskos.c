@@ -176,16 +176,17 @@ typedef struct Enemy
   int alertSfx;
   int telegraphSfx;
   int attackSfx;
+  int deathSfx;
 } Enemy;
 
 const int numEnemies = 4;
 
 //TODO: Create a prototype system for less duplication of enemies attrs
 Enemy enemies[numEnemies] = { // Oops! All snakes.
-    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 1, 0, 6, 7, 2, 3, 4},
-    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 3, 0, 6, 7, 2, 3, 4},
-    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 4, 0, 6, 7, 2, 3, 4},
-    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 5, 0, 6, 7, 2, 3, 4}};
+    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 1, 0, 6, 7, 2, 3, 4, 5},
+    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 3, 0, 6, 7, 2, 3, 4, 5},
+    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 4, 0, 6, 7, 2, 3, 4, 5},
+    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 5, 0, 6, 7, 2, 3, 4, 5}};
 
 // 1D Zbuffer
 double ZBuffer[screenWidth];
@@ -246,7 +247,8 @@ void load_music(struct music_t *music[numTracks])
   music[1] = loadmid("files/sound/meniskos_2c.mid"); // dungeon
 }
 
-int numSfx = 5;
+int numSfx = 7;
+int gemPickupSfx = 6;
 void load_sfx(struct sound_t *sfx[numSfx])
 {
   sfx[0] = loadwav("files/sound/sword_hit.wav");
@@ -254,6 +256,8 @@ void load_sfx(struct sound_t *sfx[numSfx])
   sfx[2] = loadwav("files/sound/hiss.wav");
   sfx[3] = loadwav("files/sound/hiss_telegraph.wav");
   sfx[4] = loadwav("files/sound/hiss_attack.wav");
+  sfx[5] = loadwav("files/sound/hiss_death.wav");
+  sfx[6] = loadwav("files/sound/gem_pickup.wav");
 }
 
 void set_positions()
@@ -865,7 +869,7 @@ int main(int argc, char *argv[])
         {
           if ((int)spr.x == (int)state.posX && (int)spr.y == (int)state.posY)
           {
-            // TODO: Play sfx
+            play_sfx(sfx, gemPickupSfx, HIGH_VOLUME);
             state.score += 100;
             sprite[i] = spr;
             gemPickedUp = true;
@@ -941,17 +945,16 @@ int main(int argc, char *argv[])
           if (distanceToPlayer <= weapon[0].range)
           {
             // Deal damage to enemy
-            // FIXME: Does a lot of damage immediately
             int totalDamage = weapon[0].damage;
             enemy.health -= totalDamage;
-            state.score += totalDamage;
+            state.score += totalDamage * 10;
             play_sfx(sfx, weapon[0].attackSfx, LOW_VOLUME);
             if (enemy.health <= 0)
             {
               // Enemy is dead, so set state to dead and set sprite to dead sprite
               enemy.state = DEAD;
               enemySprite.texture = deadEnemyTexture;
-              // TODO: play death sfx
+              play_sfx(sfx, enemy.deathSfx, MID_VOLUME);
             }
           }
           else
