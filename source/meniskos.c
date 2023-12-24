@@ -875,7 +875,7 @@ int main(int argc, char *argv[])
         {
           if ((int)spr.x == (int)state.posX && (int)spr.y == (int)state.posY)
           {
-            play_sfx(sfx, gemPickupSfx, HIGH_VOLUME);
+            play_sfx(sfx, gemPickupSfx, MID_VOLUME);
             state.score += 100;
             sprite[i] = spr;
             gemPickedUp = true;
