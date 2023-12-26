@@ -284,9 +284,9 @@ bool can_move_to(double posX, double posY)
   return worldMap[(int)(posX)][(int)(posY)] == false;
 }
 
-int LOW_VOLUME = 24;
-int MID_VOLUME = 48;
-int HIGH_VOLUME = 76;
+int LOW_VOLUME = 12;
+int MID_VOLUME = 24;
+int HIGH_VOLUME = 48;
 int currentChannel = 0;
 const int maxChannel = 15;
 void play_sfx(struct sound_t *sfx[numSfx], int trackIdx, int volume)
