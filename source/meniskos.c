@@ -121,15 +121,17 @@ typedef struct Sprite
   int id;
 } Sprite;
 
-#define numSprites 5
+#define numSprites 5 // per level
+#define numLevels 1 // TODO: multi levels
 
-Sprite sprite[numSprites] =
-    {
+Sprite sprite[numLevels][numSprites] = {
+    { // Level one enemies:
         {5.5, 6.5, 6, 1},  // Worm enemy
         {4.5, 7.5, 11, 2}, // Gem pickup
         {1.5, 5.5, 6, 3},  // Second worm enemy
-        {2.5, 7.5, 6, 4},  // Third worm enemy
-        {5.5, 4.5, 6, 5}   // Fourth worm enemy
+        {1.5, 1.5, 6, 4},  // Bat enemy
+        {8.5, 1.5, 6, 5}   // Second bat enemy
+    },
 };
 
 typedef struct Weapon
@@ -167,8 +169,8 @@ typedef struct Enemy
   double movementRange; // moves to player when player in range, in tiles
   double movementSpeed; // how many frames to move 1 pixel
   double attackRange;   // attacks player when player in range, in tiles
-  int attackCooldown;   // how long in frames between attacks
-  int attackSpeed;      // how long in frames between attack telegraph (frame 2 of gif) and actual attack
+  int attackCooldown;   // how long in seconds between attacks
+  int attackSpeed;      // how long in seconds between attack telegraph (frame 2 of gif) and actual attack
   int spriteId;         // used to grab this enemy's struct when iterating sprites, so the relationship is Sprite->Enemy
   int cooldown;         // how long in frames until next action
   int normalTexture;
@@ -179,14 +181,17 @@ typedef struct Enemy
   int deathSfx;
 } Enemy;
 
-const int numEnemies = 4;
+const int numEnemies = 4; // per level
 
 //TODO: Create a prototype system for less duplication of enemies attrs
-Enemy enemies[numEnemies] = { // Oops! All snakes.
-    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 1, 0, 6, 7, 2, 3, 4, 5},
-    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 3, 0, 6, 7, 2, 3, 4, 5},
-    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 4, 0, 6, 7, 2, 3, 4, 5},
-    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 5, 0, 6, 7, 2, 3, 4, 5}};
+Enemy enemies[numLevels][numEnemies] = {  
+  { // Level one enemies
+    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 1, 0, 6, 7, 2, 3, 4, 5}, // Snake
+    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 3, 0, 6, 7, 2, 3, 4, 5}, // Snake 2
+    {4, 1, IDLE, 14.0, 16.0, 1.0, 3, 1, 4, 0, 12, 13, 2, 3, 4, 5}, // Bat
+    {4, 1, IDLE, 14.0, 16.0, 1.0, 3, 1, 5, 0, 12, 13, 2, 3, 4, 5} // Bat 2
+  } // Bat 2
+};
 
 // 1D Zbuffer
 double ZBuffer[screenWidth];
@@ -205,7 +210,7 @@ double dmin(double a, double b) { return a < b ? a : b; }
 int floor1 = 3;
 int floor2 = 4;
 int ceilingTexture = 5;
-int numTextures = 11;
+int numTextures = 15;
 int deadEnemyTexture = 10;
 int gemTexture = 11;
 bool gemPickedUp = false;
@@ -234,8 +239,13 @@ void set_textures(uint8_t *texture[numTextures], int tw, int th, int palcount, u
   // gem pickup texture
   texture[11] = loadgif("files/meniskos/gem.gif", &tw, &th, &palcount, palette);
 
-  // // empty space texture
-  // texture[12] = loadgif( "files/meniskos/empty.gif", &tw, &th, &palcount, palette );
+  // bat textures
+  texture[12] = loadgif("files/meniskos/bat.gif", &tw, &th, &palcount, palette);
+  texture[13] = loadgif("files/meniskos/bat_attack.gif", &tw, &th, &palcount, palette);
+
+  // slime textures
+  texture[14] = loadgif("files/meniskos/slime.gif", &tw, &th, &palcount, palette);
+  texture[15] = loadgif("files/meniskos/slime_attack.gif", &tw, &th, &palcount, palette);
 }
 
 // TODO: associate tracks with levels?
@@ -291,7 +301,7 @@ bool has_enemy_sprite(double posX, double posY)
   int x = (int)(posX);
   int y = (int)(posY);
   for (int i = 0; i < numSprites; i++) {
-    Sprite thisSprite = sprite[i];
+    Sprite thisSprite = sprite[state.level][i];
     if ((int)(thisSprite.x) == x && (int)(thisSprite.y) == y) {
       foundSprite = thisSprite;
       break;
@@ -304,7 +314,7 @@ bool has_enemy_sprite(double posX, double posY)
   }
 
   for (int i = 0; i < numEnemies; i++) {
-    Enemy thisEnemy = enemies[i];
+    Enemy thisEnemy = enemies[state.level][i];
     if (thisEnemy.spriteId == foundSprite.id && thisEnemy.state != DEAD) {
       return true;
     }
@@ -597,7 +607,7 @@ int main(int argc, char *argv[])
       for (int i = 0; i < numEnemies; i++)
       {
         // Get enemy data:
-        Enemy enemy = enemies[i];
+        Enemy enemy = enemies[state.level][i];
 
         // Check if enemy is dead:
         if (enemy.state == DEAD)
@@ -606,14 +616,14 @@ int main(int argc, char *argv[])
         // Ensure we have grabbed the correct sprite (sprite data contains location data too):
         int spriteId = enemy.spriteId;
         int spriteIndex = 0;
-        Sprite enemySprite = sprite[spriteIndex];
+        Sprite enemySprite = sprite[state.level][spriteIndex];
         if (enemySprite.id != spriteId)
         {
           for (int j = 0; j < numSprites; j++)
           {
-            if (sprite[j].id == spriteId)
+            if (sprite[state.level][j].id == spriteId)
             {
-              enemySprite = sprite[j];
+              enemySprite = sprite[state.level][j];
               spriteIndex = j;
               break;
             }
@@ -625,8 +635,8 @@ int main(int argc, char *argv[])
         {
           enemy.state = DEAD;
           enemySprite.texture = deadEnemyTexture;
-          enemies[i] = enemy;
-          sprite[spriteIndex] = enemySprite;
+          enemies[state.level][i] = enemy;
+          sprite[state.level][spriteIndex] = enemySprite;
           continue;
         }
 
@@ -719,8 +729,8 @@ int main(int argc, char *argv[])
         // Update enemy and their sprite, must be done after all state changes:
         if (enemy.cooldown > 0)
           enemy.cooldown -= 1;
-        enemies[i] = enemy;
-        sprite[spriteIndex] = enemySprite;
+        enemies[state.level][i] = enemy;
+        sprite[state.level][spriteIndex] = enemySprite;
       }
 
       // SPRITE CASTING
@@ -728,14 +738,14 @@ int main(int argc, char *argv[])
       for (int i = 0; i < numSprites; i++)
       {
         spriteOrder[i] = i;
-        spriteDistance[i] = ((state.posX - sprite[i].x) * (state.posX - sprite[i].x) + (state.posY - sprite[i].y) * (state.posY - sprite[i].y)); // sqrt not taken, unneeded
+        spriteDistance[i] = ((state.posX - sprite[state.level][i].x) * (state.posX - sprite[state.level][i].x) + (state.posY - sprite[state.level][i].y) * (state.posY - sprite[state.level][i].y)); // sqrt not taken, unneeded
       }
       sortSprites(spriteOrder, spriteDistance, numSprites);
 
       // after sorting the sprites, do the projection and draw them
       for (int i = 0; i < numSprites; i++)
       {
-        Sprite spr = sprite[spriteOrder[i]];
+        Sprite spr = sprite[state.level][spriteOrder[i]];
         int textureIdx = spr.texture;
         if (gemPickedUp && textureIdx == gemTexture)
           continue; // do not draw gem if picked up
@@ -903,14 +913,14 @@ int main(int argc, char *argv[])
       // Handle gem pickups:
       for (int i = 0; i < numSprites; i++)
       {
-        Sprite spr = sprite[i];
+        Sprite spr = sprite[state.level][i];
         if (spr.texture == gemTexture && !gemPickedUp)
         {
           if ((int)spr.x == (int)state.posX && (int)spr.y == (int)state.posY)
           {
             play_sfx(sfx, gemPickupSfx, MID_VOLUME);
             state.score += 100;
-            sprite[i] = spr;
+            sprite[state.level][i] = spr;
             gemPickedUp = true;
             // TODO: Once there are more than one gem(s), check to see if any gems remaining before win condition.
             state.state = WIN;
@@ -956,7 +966,7 @@ int main(int argc, char *argv[])
         for (int i = 0; i < numEnemies; i++)
         {
           // Get enemy data:
-          Enemy enemy = enemies[i];
+          Enemy enemy = enemies[state.level][i];
 
           // Check if enemy is dead:
           if (enemy.state == DEAD)
@@ -965,14 +975,14 @@ int main(int argc, char *argv[])
           // Ensure we have grabbed the correct sprite:
           int spriteId = enemy.spriteId;
           int spriteIndex = 0;
-          Sprite enemySprite = sprite[spriteIndex];
+          Sprite enemySprite = sprite[state.level][spriteIndex];
           if (enemySprite.id != spriteId)
           {
             for (int j = 0; j < numSprites; j++)
             {
-              if (sprite[j].id == spriteId)
+              if (sprite[state.level][j].id == spriteId)
               {
-                enemySprite = sprite[j];
+                enemySprite = sprite[state.level][j];
                 spriteIndex = j;
                 break;
               }
@@ -1002,8 +1012,8 @@ int main(int argc, char *argv[])
           }
 
           // To update enemy:
-          enemies[i] = enemy;
-          sprite[spriteIndex] = enemySprite;
+          enemies[state.level][i] = enemy;
+          sprite[state.level][spriteIndex] = enemySprite;
         }
       }
       else if (state.playerstate != PLAYER_ATTACKING && keystate(KEY_LSHIFT))
