@@ -284,6 +284,35 @@ bool can_move_to(double posX, double posY)
   return worldMap[(int)(posX)][(int)(posY)] == false;
 }
 
+bool has_enemy_sprite(double posX, double posY)
+{
+  // Start with a "null" sprite. Right now -1 is impossible coords and ID.
+  Sprite foundSprite = {-1, -1, -1, -1};
+  int x = (int)(posX);
+  int y = (int)(posY);
+  for (int i = 0; i < numSprites; i++) {
+    Sprite thisSprite = sprite[i];
+    if ((int)(thisSprite.x) == x && (int)(thisSprite.y) == y) {
+      foundSprite = thisSprite;
+      break;
+    }
+  }
+
+  // Short circuit if no sprite in coords:
+  if (foundSprite.id == -1) {
+    return false;
+  }
+
+  for (int i = 0; i < numEnemies; i++) {
+    Enemy thisEnemy = enemies[i];
+    if (thisEnemy.spriteId == foundSprite.id && thisEnemy.state != DEAD) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 int LOW_VOLUME = 12;
 int MID_VOLUME = 24;
 int HIGH_VOLUME = 48;
@@ -829,18 +858,22 @@ int main(int argc, char *argv[])
       // moving forward/back will slow the stamina cooldown
       if (keystate(KEY_UP))
       {
-        if (can_move_to(state.posX + state.dirX * moveSpeed * 5, state.posY))
+        double xDest = state.posX + state.dirX * moveSpeed * 5;
+        double yDest = state.posY + state.dirY * moveSpeed * 5;
+        if (can_move_to(xDest, state.posY) && !has_enemy_sprite(xDest, state.posY))
           state.posX += state.dirX * moveSpeed;
-        if (can_move_to(state.posX, state.posY + state.dirY * moveSpeed * 5))
+        if (can_move_to(state.posX, yDest) && !has_enemy_sprite(state.posX, yDest))
           state.posY += state.dirY * moveSpeed;
           state.staminaCooldown += 1;
       }
       // move backwards if no wall behind you
       if (keystate(KEY_DOWN))
       {
-        if (can_move_to(state.posX - state.dirX * moveSpeed, state.posY))
+        double xDest = state.posX - state.dirX * moveSpeed;
+        double yDest = state.posY - state.dirY * moveSpeed;
+        if (can_move_to(xDest, state.posY) && !has_enemy_sprite(xDest, state.posY))
           state.posX -= state.dirX * moveSpeed;
-        if (can_move_to(state.posX, state.posY - state.dirY * moveSpeed))
+        if (can_move_to(state.posX, yDest) && !has_enemy_sprite(state.posX, yDest))
           state.posY -= state.dirY * moveSpeed;
         state.staminaCooldown += 1;
       }
