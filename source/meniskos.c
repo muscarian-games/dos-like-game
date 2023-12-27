@@ -258,13 +258,14 @@ void set_textures(uint8_t *texture[numTextures], int tw, int th, int palcount, u
 }
 
 // TODO: associate tracks with levels?
-int numTracks = 3;
+int numTracks = 4;
 void load_music(struct music_t *music[numTracks])
 {
   setsoundbank(DEFAULT_SOUNDBANK_SB16);
   music[0] = loadmid("files/sound/meniskos_1.mid");  // menu
   music[1] = loadmid("files/sound/meniskos_2c.mid"); // dungeon
   music[2] = loadmid("files/sound/meniskos_victory.mid");  // win condition
+  music[3] = loadmid("files/sound/game_over.mid"); // game over
 }
 
 int numSfx = 13;
@@ -1072,6 +1073,7 @@ int main(int argc, char *argv[])
       centertextxy(12, 12, scoreString, 100);
       centertextxy(12, 24, "You died.", 100);
       buffer = swapbuffers();
+      play_track(music, 3);
     }
     else if (state.state == WIN)
     {
