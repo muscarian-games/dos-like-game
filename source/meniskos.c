@@ -47,18 +47,45 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Zero (0) is the floor, and the rest are walls.
 // Texture for walls decided by subtracting 1 from the value.
 // 10 x 10 mazelike grid:
-int worldMap[mapWidth][mapHeight] =
-    {
-        {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
-        {3, 0, 0, 0, 2, 0, 1, 1, 1, 3},
-        {3, 0, 0, 0, 0, 0, 0, 0, 0, 3},
-        {3, 1, 0, 1, 1, 1, 1, 1, 1, 3},
-        {3, 1, 0, 0, 0, 1, 0, 0, 0, 3},
-        {3, 1, 0, 1, 0, 1, 0, 1, 1, 3},
-        {3, 1, 0, 1, 0, 1, 0, 0, 1, 3},
-        {3, 1, 0, 1, 0, 1, 1, 0, 1, 3},
-        {3, 1, 0, 0, 0, 0, 0, 0, 1, 3},
-        {3, 3, 3, 3, 3, 3, 3, 3, 3, 3}};
+int levelOneMap[mapWidth][mapHeight] = 
+  {   // Level one map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
+    {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+    {3, 0, 0, 0, 2, 0, 1, 1, 1, 3},
+    {3, 0, 0, 0, 0, 0, 0, 0, 0, 3},
+    {3, 1, 0, 1, 1, 1, 1, 1, 1, 3},
+    {3, 1, 0, 0, 0, 1, 0, 0, 0, 3},
+    {3, 1, 0, 1, 0, 1, 0, 1, 1, 3},
+    {3, 1, 0, 1, 0, 1, 0, 0, 1, 3},
+    {3, 1, 0, 1, 0, 1, 1, 0, 1, 3},
+    {3, 1, 0, 0, 0, 0, 0, 0, 1, 3},
+    {3, 3, 3, 3, 3, 3, 3, 3, 3, 3}
+  };
+
+int levelTwoMap[mapWidth][mapHeight] = 
+  {   // Level two map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
+    {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+    {3, 0, 0, 0, 0, 1, 0, 0, 0, 3},
+    {3, 0, 2, 2, 0, 1, 0, 2, 0, 3},
+    {3, 0, 2, 2, 0, 0, 0, 0, 0, 3},
+    {3, 0, 0, 0, 0, 1, 0, 1, 0, 3},
+    {3, 0, 1, 1, 0, 1, 0, 1, 0, 3},
+    {3, 0, 1, 1, 0, 1, 0, 1, 0, 3},
+    {3, 0, 0, 0, 0, 1, 0, 1, 0, 3},
+    {3, 0, 2, 2, 0, 0, 0, 0, 0, 3},
+    {3, 0, 0, 2, 0, 1, 0, 1, 0, 3}
+    {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+  };
+
+int getWorldMap(currentLevel) {
+  if (currentLevel == 1) {
+    return levelOneMap;
+  }
+
+  if (currentLevel == 2) {
+    return levelTwoMap;
+  }
+  return levelOneMap;
+}
 
 /**
  * State enums
@@ -122,16 +149,18 @@ typedef struct Sprite
 } Sprite;
 
 #define numSprites 5 // per level
-#define numLevels 1 // TODO: multi levels
+#define numLevels 2 // TODO: multi levels
 
 Sprite sprite[numLevels][numSprites] = {
-    { // Level one enemies:
+    { // Level one sprites:
         {5.5, 6.5, 6, 1},  // Worm enemy
         {4.5, 7.5, 11, 2}, // Gem pickup
         {1.5, 5.5, 6, 3},  // Second worm enemy
         {7.5, 1.5, 12, 4},  // Bat enemy
         {8.5, 5.5, 12, 5}   // Second bat enemy
-    },
+    }, 
+    { // Level two sprites: 
+    }
 };
 
 typedef struct Weapon
