@@ -129,8 +129,8 @@ Sprite sprite[numLevels][numSprites] = {
         {5.5, 6.5, 6, 1},  // Worm enemy
         {4.5, 7.5, 11, 2}, // Gem pickup
         {1.5, 5.5, 6, 3},  // Second worm enemy
-        {1.5, 1.5, 6, 4},  // Bat enemy
-        {8.5, 1.5, 6, 5}   // Second bat enemy
+        {7.5, 1.5, 12, 4},  // Bat enemy
+        {8.5, 5.5, 12, 5}   // Second bat enemy
     },
 };
 
@@ -161,35 +161,44 @@ typedef enum EnemyStateType
   DEAD
 } EnemyStateType;
 
-typedef struct Enemy
-{
-  int health;
-  int damage;
-  EnemyStateType state;
+// Things that don't mutate or change per-instance of enemy of the same type:
+typedef struct EnemyPrototype {
   double movementRange; // moves to player when player in range, in tiles
   double movementSpeed; // how many frames to move 1 pixel
   double attackRange;   // attacks player when player in range, in tiles
   int attackCooldown;   // how long in seconds between attacks
   int attackSpeed;      // how long in seconds between attack telegraph (frame 2 of gif) and actual attack
-  int spriteId;         // used to grab this enemy's struct when iterating sprites, so the relationship is Sprite->Enemy
-  int cooldown;         // how long in frames until next action
   int normalTexture;
   int attackTexture;
   int alertSfx;
   int telegraphSfx;
   int attackSfx;
   int deathSfx;
+} EnemyPrototype;
+
+const EnemyPrototype wormProto = {2, 60, 1, 2, 1, 6, 7, 3, 4, 5};
+const EnemyPrototype batProto = {2, 60, 1, 2, 1, 12, 13, 3, 4, 5};
+
+typedef struct Enemy
+{
+  int health;
+  int damage;
+  EnemyStateType state;
+  int spriteId;         // used to grab this enemy's struct when iterating sprites, so the relationship is Sprite->Enemy
+  int cooldown;         // how long in frames until next action
+  EnemyPrototype* proto; // things that don't mutate or change per-instance of enemy of the same type
 } Enemy;
+
 
 const int numEnemies = 4; // per level
 
 //TODO: Create a prototype system for less duplication of enemies attrs
 Enemy enemies[numLevels][numEnemies] = {  
   { // Level one enemies
-    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 1, 0, 6, 7, 2, 3, 4, 5}, // Snake
-    {3, 2, IDLE, 12.0, 12.0, 1.0, 3, 2, 3, 0, 6, 7, 2, 3, 4, 5}, // Snake 2
-    {4, 1, IDLE, 14.0, 16.0, 1.0, 3, 1, 4, 0, 12, 13, 2, 3, 4, 5}, // Bat
-    {4, 1, IDLE, 14.0, 16.0, 1.0, 3, 1, 5, 0, 12, 13, 2, 3, 4, 5} // Bat 2
+    {3, 2, IDLE, 1, 0, &wormProto}, // Snake
+    {3, 2, IDLE, 3, 0, &wormProto}, // Snake 2
+    {4, 1, IDLE, 4, 0, &batProto}, // Bat
+    {4, 1, IDLE, 5, 0, &batProto} // Bat 2
   } // Bat 2
 };
 
@@ -647,11 +656,11 @@ int main(int argc, char *argv[])
         if (enemy.state == IDLE || enemy.state == MOVING)
         {
           // Enemy sprites move to player if player within movementRange but not within attackRange:
-          if (distanceToPlayer <= enemy.movementRange && distanceToPlayer > enemy.attackRange)
+          if (distanceToPlayer <= enemy.proto->movementRange && distanceToPlayer > enemy.proto->attackRange)
           {
             // Move enemy towards player
             double moveDir = atan2(state.posY - enemySprite.y, state.posX - enemySprite.x);
-            double speedPerFrame = enemy.movementSpeed / 60.0; // 60 fps
+            double speedPerFrame = enemy.proto->movementSpeed / 60.0; // 60 fps
             double xMovement = cos(moveDir) * (speedPerFrame / (double)texWidth);
             double yMovement = sin(moveDir) * (speedPerFrame / (double)texWidth);
 
@@ -664,7 +673,7 @@ int main(int argc, char *argv[])
             // Handle state transition
             if (enemy.state == IDLE) {
               // Play alert sfx
-              play_sfx(sfx, enemy.alertSfx, LOW_VOLUME);
+              play_sfx(sfx, enemy.proto->alertSfx, LOW_VOLUME);
             }
             enemy.state = MOVING;
           }
@@ -673,23 +682,23 @@ int main(int argc, char *argv[])
             enemy.state = IDLE;
           }
 
-          if (enemy.state == IDLE && distanceToPlayer <= enemy.attackRange && enemy.cooldown <= 0)
+          if (enemy.state == IDLE && distanceToPlayer <= enemy.proto->attackRange && enemy.cooldown <= 0)
           {
             // Enemy is in range to attack player, so start attack telegraph
-            play_sfx(sfx, enemy.telegraphSfx, LOW_VOLUME);
+            play_sfx(sfx, enemy.proto->telegraphSfx, LOW_VOLUME);
             enemy.state = ATTACKING;
-            enemySprite.texture = enemy.attackTexture;
-            enemy.cooldown = enemy.attackSpeed * 60.0;
+            enemySprite.texture = enemy.proto->attackTexture;
+            enemy.cooldown = enemy.proto->attackSpeed * 60.0;
           }
         }
 
         if (enemy.state == ATTACKING)
         {
-          if (distanceToPlayer <= enemy.attackRange && enemy.cooldown <= 0)
+          if (distanceToPlayer <= enemy.proto->attackRange && enemy.cooldown <= 0)
           {
-            play_sfx(sfx, enemy.attackSfx, MID_VOLUME);
+            play_sfx(sfx, enemy.proto->attackSfx, MID_VOLUME);
             //  Set up cooldown:
-            enemy.cooldown = enemy.attackCooldown * 60.0;
+            enemy.cooldown = enemy.proto->attackCooldown * 60.0;
 
             /**
              * Deal damage to player health/stamina/score
@@ -716,13 +725,13 @@ int main(int argc, char *argv[])
 
             // Set state back to idle after attack completes:
             enemy.state = IDLE;
-            enemySprite.texture = enemy.normalTexture;
+            enemySprite.texture = enemy.proto->normalTexture;
           }
-          else if (distanceToPlayer > enemy.attackRange)
+          else if (distanceToPlayer > enemy.proto->attackRange)
           {
             // Enemy is out of attack range, so stop attack telegraph:
             enemy.state = IDLE;
-            enemySprite.texture = enemy.normalTexture;
+            enemySprite.texture = enemy.proto->normalTexture;
           }
         }
 
@@ -1003,7 +1012,7 @@ int main(int argc, char *argv[])
               // Enemy is dead, so set state to dead and set sprite to dead sprite
               enemy.state = DEAD;
               enemySprite.texture = deadEnemyTexture;
-              play_sfx(sfx, enemy.deathSfx, MID_VOLUME);
+              play_sfx(sfx, enemy.proto->deathSfx, MID_VOLUME);
             }
           }
           else
