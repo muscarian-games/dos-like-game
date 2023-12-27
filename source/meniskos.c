@@ -176,8 +176,8 @@ typedef struct EnemyPrototype {
   int deathSfx;
 } EnemyPrototype;
 
-const EnemyPrototype wormProto = {2, 60, 1, 2, 1, 6, 7, 3, 4, 5};
-const EnemyPrototype batProto = {2, 60, 1, 2, 1, 12, 13, 3, 4, 5};
+const EnemyPrototype wormProto = {2, 60, 1, 2, 1, 6, 7, 3, 4, 5, 6};
+const EnemyPrototype batProto = {2, 60, 1, 2, 1, 12, 13, 9, 10, 11, 12};
 
 typedef struct Enemy
 {
@@ -267,7 +267,7 @@ void load_music(struct music_t *music[numTracks])
   music[2] = loadmid("files/sound/meniskos_victory.mid");  // win condition
 }
 
-int numSfx = 7;
+int numSfx = 13;
 int gemPickupSfx = 6;
 void load_sfx(struct sound_t *sfx[numSfx])
 {
@@ -278,6 +278,12 @@ void load_sfx(struct sound_t *sfx[numSfx])
   sfx[4] = loadwav("files/sound/hiss_attack.wav");
   sfx[5] = loadwav("files/sound/hiss_death.wav");
   sfx[6] = loadwav("files/sound/gem_pickup.wav");
+  sfx[7] = loadwav("files/sound/pain_grunt.wav");
+  sfx[8] = loadwav("files/sound/death_grunt.wav");
+  sfx[9] = loadwav("files/sound/bat_alert.wav");
+  sfx[10] = loadwav("files/sound/bat_telegraph.wav");
+  sfx[11] = loadwav("files/sound/bat_attack.wav");
+  sfx[12] = loadwav("files/sound/bat_death.wav");
 }
 
 void set_positions()
@@ -715,12 +721,17 @@ int main(int argc, char *argv[])
             state.health -= healthDamage;
             state.stamina -= staminaDamage;
             state.score -= healthDamage * 10;
+            
 
             if (state.health <= 0)
             {
               // Play death SFX;
+              play_sfx(sfx, 9, MID_VOLUME);
               state.state = GAMEOVER;
               break;
+            } else 
+            {
+              play_sfx(sfx, 8, MID_VOLUME); // normal pain grunt
             }
 
             // Set state back to idle after attack completes:
