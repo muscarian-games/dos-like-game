@@ -43,53 +43,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define mapWidth 10
 #define mapHeight 10
 
-// TODO: Generate worldmaps per floor
-// Zero (0) is the floor, and the rest are walls.
-// Texture for walls decided by subtracting 1 from the value.
-// 10 x 10 mazelike grid:
-int levelOneMap[mapWidth][mapHeight] =
-    { // Level one map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
-        {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
-        {3, 0, 0, 0, 2, 0, 1, 1, 1, 3},
-        {3, 0, 0, 0, 0, 0, 0, 0, 0, 3},
-        {3, 1, 0, 1, 1, 1, 1, 1, 1, 3},
-        {3, 1, 0, 0, 0, 1, 0, 0, 0, 3},
-        {3, 1, 0, 1, 0, 1, 0, 1, 1, 3},
-        {3, 1, 0, 1, 0, 1, 0, 0, 1, 3},
-        {3, 1, 0, 1, 0, 1, 1, 0, 1, 3},
-        {3, 1, 0, 0, 0, 0, 0, 0, 1, 3},
-        {3, 3, 3, 3, 3, 3, 3, 3, 3, 3}};
-
-int levelTwoMap[mapWidth][mapHeight] =
-    {
-        // Level two map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
-        {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
-        {3, 0, 0, 0, 0, 1, 0, 0, 0, 3},
-        {3, 0, 2, 2, 0, 1, 0, 2, 0, 3},
-        {3, 0, 2, 2, 0, 0, 0, 0, 0, 3},
-        {3, 0, 0, 0, 0, 1, 0, 1, 0, 3},
-        {3, 0, 1, 1, 0, 1, 0, 1, 0, 3},
-        {3, 0, 1, 1, 0, 1, 0, 1, 0, 3},
-        {3, 0, 0, 0, 0, 1, 0, 1, 0, 3},
-        {3, 0, 2, 2, 0, 0, 0, 0, 0, 3},
-        {3, 0, 0, 2, 0, 1, 0, 1, 0, 3}, 
-        {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
-};
-
-int getWorldMap(currentLevel)
-{
-  if (currentLevel == 1)
-  {
-    return levelOneMap;
-  }
-
-  if (currentLevel == 2)
-  {
-    return levelTwoMap;
-  }
-  return levelOneMap;
-}
-
 /**
  * State enums
  */
@@ -154,19 +107,6 @@ typedef struct Sprite
 #define numSprites 5 // per level
 #define numLevels 2  // TODO: multi levels
 
-Sprite sprite[numLevels][numSprites] = {
-    {
-        // Level one sprites:
-        {5.5, 6.5, 6, 1},  // Worm enemy
-        {4.5, 7.5, 11, 2}, // Gem pickup
-        {1.5, 5.5, 6, 3},  // Second worm enemy
-        {7.5, 1.5, 12, 4}, // Bat enemy
-        {8.5, 5.5, 12, 5}  // Second bat enemy
-    },
-    {
-        // Level two sprites:
-    }};
-
 typedef struct Weapon
 {
   int texture;
@@ -225,15 +165,73 @@ typedef struct Enemy
 
 const int numEnemies = 4; // per level
 
-// TODO: Create a prototype system for less duplication of enemies attrs
-Enemy enemies[numLevels][numEnemies] = {
+typedef struct Level {
+  int map[mapWidth][mapHeight];
+  Sprite sprites[numSprites];
+  Enemy enemies[numEnemies];
+} Level;
+
+Level levels[numLevels] = {
+  {
+    { // Level one map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
+        {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+        {3, 0, 0, 0, 2, 0, 1, 1, 1, 3},
+        {3, 0, 0, 0, 0, 0, 0, 0, 0, 3},
+        {3, 1, 0, 1, 1, 1, 1, 1, 1, 3},
+        {3, 1, 0, 0, 0, 1, 0, 0, 0, 3},
+        {3, 1, 0, 1, 0, 1, 0, 1, 1, 3},
+        {3, 1, 0, 1, 0, 1, 0, 0, 1, 3},
+        {3, 1, 0, 1, 0, 1, 1, 0, 1, 3},
+        {3, 1, 0, 0, 0, 0, 0, 0, 1, 3},
+        {3, 3, 3, 3, 3, 3, 3, 3, 3, 3}},
+        {
+        // Level one sprites:
+        {5.5, 6.5, 6, 1},  // Worm enemy
+        {4.5, 7.5, 11, 2}, // Gem pickup
+        {1.5, 5.5, 6, 3},  // Second worm enemy
+        {7.5, 1.5, 12, 4}, // Bat enemy
+        {8.5, 5.5, 12, 5}  // Second bat enemy
+    },
     {
         // Level one enemies
         {3, 2, IDLE, 1, 0, &wormProto}, // Snake
         {3, 2, IDLE, 3, 0, &wormProto}, // Snake 2
         {4, 1, IDLE, 4, 0, &batProto},  // Bat
         {4, 1, IDLE, 5, 0, &batProto}   // Bat 2
-    }                                   // Bat 2
+    }                          
+  },
+  {
+    // Level two
+        {
+        // Level two map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
+        {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+        {3, 0, 0, 0, 0, 1, 0, 0, 0, 3},
+        {3, 0, 2, 2, 0, 1, 0, 2, 0, 3},
+        {3, 0, 2, 2, 0, 0, 0, 0, 0, 3},
+        {3, 0, 0, 0, 0, 1, 0, 1, 0, 3},
+        {3, 0, 1, 1, 0, 1, 0, 1, 0, 3},
+        {3, 0, 1, 1, 0, 1, 0, 1, 0, 3},
+        {3, 0, 0, 0, 0, 1, 0, 1, 0, 3},
+        {3, 0, 2, 2, 0, 0, 0, 0, 0, 3},
+        {3, 0, 0, 2, 0, 1, 0, 1, 0, 3}, 
+        {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+},
+        {
+        // Level one sprites:
+        {5.5, 6.5, 6, 1},  // Worm enemy
+        {4.5, 7.5, 11, 2}, // Gem pickup
+        {1.5, 5.5, 6, 3},  // Second worm enemy
+        {7.5, 1.5, 12, 4}, // Bat enemy
+        {8.5, 5.5, 12, 5}  // Second bat enemy
+    },   
+        {
+        // Level one enemies
+        {3, 2, IDLE, 1, 0, &wormProto}, // Snake
+        {3, 2, IDLE, 3, 0, &wormProto}, // Snake 2
+        {4, 1, IDLE, 4, 0, &batProto},  // Bat
+        {4, 1, IDLE, 5, 0, &batProto}   // Bat 2
+    }         
+  }
 };
 
 // 1D Zbuffer
@@ -341,7 +339,8 @@ void set_positions()
 
 bool can_move_to(double posX, double posY)
 {
-  return getWorldMap(state.level)[(int)(posX)][(int)(posY)] == false;
+  int worldMap[mapWidth][mapHeight] = levels[state.level].map;
+  return worldMap[(int)(posX)][(int)(posY)] == false;
 }
 
 bool has_enemy_sprite(double posX, double posY)
@@ -352,7 +351,7 @@ bool has_enemy_sprite(double posX, double posY)
   int y = (int)(posY);
   for (int i = 0; i < numSprites; i++)
   {
-    Sprite thisSprite = sprite[state.level][i];
+    Sprite thisSprite = levels[state.level].sprites[i];
     if ((int)(thisSprite.x) == x && (int)(thisSprite.y) == y)
     {
       foundSprite = thisSprite;
@@ -368,7 +367,7 @@ bool has_enemy_sprite(double posX, double posY)
 
   for (int i = 0; i < numEnemies; i++)
   {
-    Enemy thisEnemy = enemies[state.level][i];
+    Enemy thisEnemy = levels[state.level].enemies[i];
     if (thisEnemy.spriteId == foundSprite.id && thisEnemy.state != DEAD)
     {
       return true;
@@ -599,7 +598,7 @@ int main(int argc, char *argv[])
             side = 1;
           }
           // Check if ray has hit a wall
-          int worldMap[mapWidth][mapHeight] = getWorldMap(state.level);
+          int worldMap[mapWidth][mapHeight] = levels[state.level].map;
           if (worldMap[mapX][mapY] > 0)
             hit = 1;
         }
@@ -621,7 +620,7 @@ int main(int argc, char *argv[])
         if (drawEnd >= h)
           drawEnd = h;
         // texturing calculations
-        int worldMap[mapWidth][mapHeight] = getWorldMap(state.level);
+        int worldMap[mapWidth][mapHeight] = levels[state.level].map;
         int texNum = worldMap[mapX][mapY] - 1; // 1 subtracted from it so that texture 0 can be used!
 
         // calculate value of wallX
@@ -664,7 +663,7 @@ int main(int argc, char *argv[])
       for (int i = 0; i < numEnemies; i++)
       {
         // Get enemy data:
-        Enemy enemy = enemies[state.level][i];
+        Enemy enemy = levels[state.level].enemies[i];
 
         // Check if enemy is dead:
         if (enemy.state == DEAD)
@@ -673,14 +672,14 @@ int main(int argc, char *argv[])
         // Ensure we have grabbed the correct sprite (sprite data contains location data too):
         int spriteId = enemy.spriteId;
         int spriteIndex = 0;
-        Sprite enemySprite = sprite[state.level][spriteIndex];
+        Sprite enemySprite = levels[state.level].sprites[i];
         if (enemySprite.id != spriteId)
         {
           for (int j = 0; j < numSprites; j++)
           {
-            if (sprite[state.level][j].id == spriteId)
+            if (levels[state.level].sprites[j].id == spriteId)
             {
-              enemySprite = sprite[state.level][j];
+              enemySprite = levels[state.level].sprites[j];
               spriteIndex = j;
               break;
             }
@@ -692,8 +691,8 @@ int main(int argc, char *argv[])
         {
           enemy.state = DEAD;
           enemySprite.texture = deadEnemyTexture;
-          enemies[state.level][i] = enemy;
-          sprite[state.level][spriteIndex] = enemySprite;
+          levels[state.level].enemies[i] = enemy;
+          levels[state.level].sprites[spriteIndex] = enemySprite;
           continue;
         }
 
@@ -793,8 +792,8 @@ int main(int argc, char *argv[])
         // Update enemy and their sprite, must be done after all state changes:
         if (enemy.cooldown > 0)
           enemy.cooldown -= 1;
-        enemies[state.level][i] = enemy;
-        sprite[state.level][spriteIndex] = enemySprite;
+        levels[state.level].enemies[i] = enemy;
+        levels[state.level].sprites[spriteIndex] = enemySprite;
       }
 
       // SPRITE CASTING
@@ -802,14 +801,14 @@ int main(int argc, char *argv[])
       for (int i = 0; i < numSprites; i++)
       {
         spriteOrder[i] = i;
-        spriteDistance[i] = ((state.posX - sprite[state.level][i].x) * (state.posX - sprite[state.level][i].x) + (state.posY - sprite[state.level][i].y) * (state.posY - sprite[state.level][i].y)); // sqrt not taken, unneeded
+        spriteDistance[i] = ((state.posX - levels[state.level].sprites[i].x) * (state.posX - levels[state.level].sprites[i].x) + (state.posY - levels[state.level].sprites[i].y) * (state.posY - levels[state.level].sprites[i].y)); // sqrt not taken, unneeded
       }
       sortSprites(spriteOrder, spriteDistance, numSprites);
 
       // after sorting the sprites, do the projection and draw them
       for (int i = 0; i < numSprites; i++)
       {
-        Sprite spr = sprite[state.level][spriteOrder[i]];
+        Sprite spr = levels[state.level].sprites[spriteOrder[i]];
         int textureIdx = spr.texture;
         if (gemPickedUp && textureIdx == gemTexture)
           continue; // do not draw gem if picked up
@@ -977,14 +976,14 @@ int main(int argc, char *argv[])
       // Handle gem pickups:
       for (int i = 0; i < numSprites; i++)
       {
-        Sprite spr = sprite[state.level][i];
+        Sprite spr = levels[state.level].sprites[i];
         if (spr.texture == gemTexture && !gemPickedUp)
         {
           if ((int)spr.x == (int)state.posX && (int)spr.y == (int)state.posY)
           {
             play_sfx(sfx, gemPickupSfx, MID_VOLUME);
             state.score += 100;
-            sprite[state.level][i] = spr;
+            levels[state.level].sprites[i] = spr;
             gemPickedUp = true;
             // TODO: Once there are more than one gem(s), check to see if any gems remaining before win condition.
             state.state = WIN;
@@ -1030,7 +1029,7 @@ int main(int argc, char *argv[])
         for (int i = 0; i < numEnemies; i++)
         {
           // Get enemy data:
-          Enemy enemy = enemies[state.level][i];
+          Enemy enemy = levels[state.level].enemies[i];
 
           // Check if enemy is dead:
           if (enemy.state == DEAD)
@@ -1039,14 +1038,14 @@ int main(int argc, char *argv[])
           // Ensure we have grabbed the correct sprite:
           int spriteId = enemy.spriteId;
           int spriteIndex = 0;
-          Sprite enemySprite = sprite[state.level][spriteIndex];
+          Sprite enemySprite = levels[state.level].sprites[spriteIndex];
           if (enemySprite.id != spriteId)
           {
             for (int j = 0; j < numSprites; j++)
             {
-              if (sprite[state.level][j].id == spriteId)
+              if (levels[state.level].sprites[j].id == spriteId)
               {
-                enemySprite = sprite[state.level][j];
+                enemySprite = levels[state.level].sprites[j];
                 spriteIndex = j;
                 break;
               }
@@ -1076,8 +1075,8 @@ int main(int argc, char *argv[])
           }
 
           // To update enemy:
-          enemies[state.level][i] = enemy;
-          sprite[state.level][spriteIndex] = enemySprite;
+          levels[state.level].enemies[i] = enemy;
+          levels[state.level].sprites[spriteIndex] = enemySprite;
         }
       }
       else if (state.playerstate != PLAYER_ATTACKING && keystate(KEY_LSHIFT))
