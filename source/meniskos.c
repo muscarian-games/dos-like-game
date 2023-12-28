@@ -44,6 +44,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define mapHeight 10
 
 /**
+ * Paint palette
+*/
+const int BLACK = 0;
+const int BLUE = 1;
+const int BRIGHT_GREEN = 2;
+const int LIGHT_BLUE = 3;
+const int RED = 4;
+const int FUCHSIA = 5;
+const int ORANGE = 6;
+const int WHITE = 7;
+const int GREY = 8;
+const int LAVENDER = 9;
+const int GREEN = 10;
+
+// paint pixel colors, 0 = ???, 1 = green, 2 = light blue, 3 = (???), 4 = red, 5 = fuchsia, 6 = orange, 7 = white
+
+/**
  * State enums
  */
 
@@ -102,6 +119,7 @@ typedef struct Sprite
   double y; // is y=0 top left or?
   int texture;
   int id;
+  int color;
 } Sprite;
 
 #define numSprites 5 // per level
@@ -173,6 +191,9 @@ typedef struct Level
   Enemy enemies[numEnemies];
   int startX;
   int startY;
+  int wallColor;
+  int floorColor;
+  int ceilingColor;
 } Level;
 
 Level levels[numLevels] = {
@@ -189,11 +210,11 @@ Level levels[numLevels] = {
       {3, 3, 3, 3, 3, 3, 3, 3, 3, 3}},
     {
          // Level one sprites:
-         {5.5, 6.5, 6, 1},  // Worm enemy
-         {4.5, 7.5, 11, 2}, // Gem pickup
-         {1.5, 5.5, 6, 3},  // Second worm enemy
-         {7.5, 1.5, 12, 4}, // Bat enemy
-         {8.5, 5.5, 12, 5}  // Second bat enemy
+         {5.5, 6, 6, 1, GREEN},  // Worm enemy
+         {4.5, 7, 11, 2, LIGHT_BLUE}, // Gem pickup
+         {1.5, 5, 6, 3, GREEN},  // Second worm enemy
+         {7.5, 1, 12, 4, RED}, // Bat enemy
+         {8, 5, 12, 5, RED}  // Second bat enemy
     },
     {
          // Level one enemies
@@ -204,7 +225,11 @@ Level levels[numLevels] = {
     },
     // Level 1 starting cords are ignored at the moment. Other levels use them.
     1,
-    1},
+    1,
+    BLUE,
+    ORANGE,
+    GREY
+    },
     {// Level two
       {
         // Level two map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
@@ -221,11 +246,11 @@ Level levels[numLevels] = {
     },
     {
          // Level two sprites:
-         {1.5, 1.5, 6, 1},  // Worm enemy
-         {8.5, 1.5, 11, 2}, // Gem pickup
-         {6.5, 9, 14, 3},  // Slime enemy
-         {1.5, 7.5, 12, 4}, // Bat enemy
-         {9.5, 5.5, 12, 5}  // Second bat enemy
+         {1.5, 1.5, 6, 1, GREEN},  // Worm enemy
+         {8.5, 1.5, 11, 2, LIGHT_BLUE}, // Gem pickup
+         {6.5, 9.5, 14, 3, FUCHSIA},  // Slime enemy
+         {1.5, 7.5, 12, 4, RED}, // Bat enemy
+         {9.5, 5.5, 12, 5, RED}  // Second bat enemy
     },
     {
          // Level two enemies
@@ -235,7 +260,11 @@ Level levels[numLevels] = {
          {4, 1, IDLE, 5, 0, &batProto}   // Bat 2
     },
     8,
-    2},
+    2,
+    LAVENDER,
+    ORANGE,
+    GREY
+    },
     { // Level three
       { 
       // Level 3 map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
@@ -251,21 +280,24 @@ Level levels[numLevels] = {
       {3, 3, 3, 3, 3, 3, 3, 3, 3, 3}},
     {
          // Level 3 sprites:
-         {5.5, 6.5, 13, 1},  // Slime enemy
-         {4.5, 7.5, 11, 2}, // Gem pickup
-         {1.5, 5.5, 13, 3},  // Second slime enemy
-         {7.5, 1.5, 12, 4}, // Bat enemy
-         {8.5, 5.5, 12, 5}  // Second bat enemy
+         {5.5, 7.5, 14, 1, FUCHSIA},  // Slime enemy
+         {4.5, 7.5, 11, 2, LIGHT_BLUE}, // Gem pickup
+         {2.5, 5.5, 14, 3, FUCHSIA},  // Second slime enemy
+         {7.5, 1.5, 12, 4, RED}, // Bat enemy
+         {8.5, 5.5, 12, 5, RED}  // Second bat enemy
     },
     {
          // Level 3 enemies
-         {3, 2, IDLE, 1, 0, &wormProto}, // Snake
-         {3, 2, IDLE, 3, 0, &wormProto}, // Snake 2
+         {3, 2, IDLE, 1, 0, &slimeProto}, // Slime
+         {3, 2, IDLE, 3, 0, &slimeProto}, // Slime 2
          {4, 1, IDLE, 4, 0, &batProto},  // Bat
          {4, 1, IDLE, 5, 0, &batProto}   // Bat 2
     },
     2,
-    2
+    2,
+    GREY,
+  GREEN,
+    BLUE
     }
   };
 
@@ -554,13 +586,21 @@ int main(int argc, char *argv[])
           {
             // floor - get pixel
             color = texture[floorTexture][texWidth * ty + tx];
-            buffer[x + w * y] = (uint8_t)color;
+            if ((color & 0x00FFFFFF) != 0) {
+              buffer[x + w * y] = (uint8_t)levels[state.level].floorColor;
+            } else {
+              buffer[x + w * y] = (uint8_t)color;
+            }
           }
           else
           {
             // ceiling - get pixel
             color = texture[ceilingTexture][texWidth * ty + tx];
-            buffer[x + w * y] = (uint8_t)color;
+            if ((color & 0x00FFFFFF) != 0) {
+              buffer[x + w * y] = (uint8_t)levels[state.level].ceilingColor;
+            } else {
+              buffer[x + w * y] = (uint8_t)color;
+            }
           }
         }
       }
@@ -685,6 +725,12 @@ int main(int argc, char *argv[])
           int texY = (int)texPos & (texHeight - 1);
           texPos += step;
           uint32_t color = texture[texNum][texHeight * texY + texX];
+          if ((color & 0x00FFFFFF) != 0) {
+            color = (uint8_t)levels[state.level].wallColor;
+          } else {
+            color = (uint8_t)color;
+          }
+
           // make color darker for y-sides: R, G and B byte each divided through two with a "shift" and an "and"
           if (side == 1)
             color = (color >> 1) & 8355711;
@@ -913,7 +959,7 @@ int main(int argc, char *argv[])
 
               uint32_t color = texture[textureIdx][texWidth * texY + texX]; // get current color from the texture
               if ((color & 0x00FFFFFF) != 0)
-                buffer[stripe + w * y] = (uint8_t)color; // paint pixel if it isn't black, black is the invisible color
+                buffer[stripe + w * y] = (uint8_t)spr.color; // paint pixel if it isn't black, black is the invisible color
             }
           }
         }
@@ -928,7 +974,7 @@ int main(int argc, char *argv[])
         {
           uint32_t color = texture[weaponTexture][texWidth * (y / weaponScale) + (x / weaponScale)];
           if ((color & 0x00FFFFFF) != 0)
-            buffer[x + w * ((screenHeight - (texHeight * weaponScale)) + y)] = (uint8_t)(7); // paint pixel colors, 0 = ???, 1 = green, 2 = light blue, 3 = (???), 4 = red, 5 = fuchsia, 6 = orange, 7 = white
+            buffer[x + w * ((screenHeight - (texHeight * weaponScale)) + y)] = (uint8_t)(WHITE); 
         }
       }
 
@@ -1054,7 +1100,7 @@ int main(int argc, char *argv[])
               state.posY = levels[state.level].startY;
               state.posZ = 0.0;
               state.pitch = 0.0;
-              // state.health = maxHealth;
+              state.health = maxHealth;
               state.stamina = maxStamina;
               state.staminaCooldown = 120;
               state.playerstate = PLAYER_NORMAL;
