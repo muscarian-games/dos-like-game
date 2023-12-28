@@ -276,12 +276,12 @@ Level levels[numLevels] = {
       {3, 0, 0, 1, 0, 1, 0, 1, 1, 3},
       {3, 1, 0, 1, 0, 1, 0, 0, 1, 3},
       {3, 0, 0, 1, 0, 1, 1, 0, 1, 3},
-      {3, 0, 0, 0, 0, 0, 0, 0, 1, 3},
+      {3, 0, 0, 0, 0, 0, 0, 0, 0, 3},
       {3, 3, 3, 3, 3, 3, 3, 3, 3, 3}},
     {
          // Level 3 sprites:
          {5.5, 7.5, 14, 1, FUCHSIA},  // Slime enemy
-         {4.5, 7.5, 11, 2, LIGHT_BLUE}, // Gem pickup
+         {8.5, 8.5, 11, 2, LIGHT_BLUE}, // Gem pickup
          {2.5, 5.5, 14, 3, FUCHSIA},  // Second slime enemy
          {7.5, 1.5, 12, 4, RED}, // Bat enemy
          {8.5, 5.5, 12, 5, RED}  // Second bat enemy
@@ -362,7 +362,7 @@ void load_music(struct music_t *music[numTracks])
 {
   setsoundbank(DEFAULT_SOUNDBANK_SB16);
   music[0] = loadmid("files/sound/meniskos_1a.mid");       // menu
-  music[1] = loadmid("files/sound/meniskos_2c.mid");      // dungeon
+  music[1] = loadmid("files/sound/meniskos_2.mid");      // dungeon
   music[2] = loadmid("files/sound/meniskos_victory.mid"); // win condition
   music[3] = loadmid("files/sound/game_over.mid");        // game over
 }
