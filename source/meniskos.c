@@ -169,6 +169,8 @@ typedef struct Level {
   int map[mapWidth][mapHeight];
   Sprite sprites[numSprites];
   Enemy enemies[numEnemies];
+  int startX;
+  int startY;
 } Level;
 
 Level levels[numLevels] = {
@@ -198,7 +200,8 @@ Level levels[numLevels] = {
         {3, 2, IDLE, 3, 0, &wormProto}, // Snake 2
         {4, 1, IDLE, 4, 0, &batProto},  // Bat
         {4, 1, IDLE, 5, 0, &batProto}   // Bat 2
-    }                          
+    },
+    1, 1                
   },
   {
     // Level two
@@ -230,7 +233,8 @@ Level levels[numLevels] = {
         {3, 2, IDLE, 3, 0, &wormProto}, // Snake 2
         {4, 1, IDLE, 4, 0, &batProto},  // Bat
         {4, 1, IDLE, 5, 0, &batProto}   // Bat 2
-    }         
+    },
+    1, 1   
   }
 };
 
@@ -339,8 +343,7 @@ void set_positions()
 
 bool can_move_to(double posX, double posY)
 {
-  int worldMap[mapWidth][mapHeight] = levels[state.level].map;
-  return worldMap[(int)(posX)][(int)(posY)] == false;
+  return levels[state.level].map[(int)(posX)][(int)(posY)] == false;
 }
 
 bool has_enemy_sprite(double posX, double posY)
@@ -598,8 +601,7 @@ int main(int argc, char *argv[])
             side = 1;
           }
           // Check if ray has hit a wall
-          int worldMap[mapWidth][mapHeight] = levels[state.level].map;
-          if (worldMap[mapX][mapY] > 0)
+          if (levels[state.level].map[mapX][mapY] > 0)
             hit = 1;
         }
 
@@ -620,8 +622,7 @@ int main(int argc, char *argv[])
         if (drawEnd >= h)
           drawEnd = h;
         // texturing calculations
-        int worldMap[mapWidth][mapHeight] = levels[state.level].map;
-        int texNum = worldMap[mapX][mapY] - 1; // 1 subtracted from it so that texture 0 can be used!
+        int texNum = levels[state.level].map[mapX][mapY] - 1; // 1 subtracted from it so that texture 0 can be used!
 
         // calculate value of wallX
         double wallX; // where exactly the wall was hit
@@ -986,7 +987,20 @@ int main(int argc, char *argv[])
             levels[state.level].sprites[i] = spr;
             gemPickedUp = true;
             // TODO: Once there are more than one gem(s), check to see if any gems remaining before win condition.
-            state.state = WIN;
+            if (state.level == numLevels - 1) {
+              state.state = WIN;
+            } else {
+              state.level += 1;
+              state.posX = levels[state.level].startX;
+              state.posY = levels[state.level].startY;
+              state.posZ = 0.0;
+              state.pitch = 0.0;
+              // state.health = maxHealth;
+              state.stamina = maxStamina;
+              state.staminaCooldown = 120;
+              state.playerstate = PLAYER_NORMAL;
+              gemPickedUp = false;
+            }
           }
         }
       }
