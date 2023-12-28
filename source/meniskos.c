@@ -361,7 +361,7 @@ int numTracks = 4;
 void load_music(struct music_t *music[numTracks])
 {
   setsoundbank(DEFAULT_SOUNDBANK_SB16);
-  music[0] = loadmid("files/sound/meniskos_1.mid");       // menu
+  music[0] = loadmid("files/sound/meniskos_1a.mid");       // menu
   music[1] = loadmid("files/sound/meniskos_2c.mid");      // dungeon
   music[2] = loadmid("files/sound/meniskos_victory.mid"); // win condition
   music[3] = loadmid("files/sound/game_over.mid");        // game over
@@ -465,7 +465,7 @@ void play_track(struct music_t *music[numTracks], int trackIdx)
 {
   if (state.track != trackIdx)
   {
-    playmusic(music[trackIdx], 1, 255);
+    playmusic(music[trackIdx], 1, 128);
     state.track = trackIdx;
   }
 }
