@@ -105,7 +105,7 @@ typedef struct Sprite
 } Sprite;
 
 #define numSprites 5 // per level
-#define numLevels 2  // TODO: multi levels
+#define numLevels 3  // TODO: multi levels
 
 typedef struct Weapon
 {
@@ -141,7 +141,7 @@ typedef struct EnemyPrototype
   double movementSpeed; // how many frames to move 1 pixel
   double attackRange;   // attacks player when player in range, in tiles
   int attackCooldown;   // how long in seconds between attacks
-  int attackSpeed;      // how long in seconds between attack telegraph (frame 2 of gif) and actual attack
+  int attackSpeed;      // how long in seconds between attack telegraph and actual attack
   int normalTexture;
   int attackTexture;
   int alertSfx;
@@ -150,8 +150,9 @@ typedef struct EnemyPrototype
   int deathSfx;
 } EnemyPrototype;
 
-const EnemyPrototype wormProto = {2, 60, 1, 2, 1, 6, 7, 3, 4, 5, 6};
-const EnemyPrototype batProto = {2, 60, 1, 2, 1, 12, 13, 9, 10, 11, 12};
+EnemyPrototype wormProto = {2, 40, 1, 2, 1, 6, 7, 2, 3, 4, 5};
+EnemyPrototype batProto = {2, 60, 1, 2, 1, 12, 13, 9, 10, 11, 12};
+EnemyPrototype slimeProto = {4, 30, 2, 2, 2, 14, 15, 13, 14, 15, 16};
 
 typedef struct Enemy
 {
@@ -222,19 +223,51 @@ Level levels[numLevels] = {
          // Level two sprites:
          {1.5, 1.5, 6, 1},  // Worm enemy
          {8.5, 1.5, 11, 2}, // Gem pickup
-         {6.5, 7.5, 6, 3},  // Second worm enemy
+         {6.5, 9, 14, 3},  // Slime enemy
          {1.5, 7.5, 12, 4}, // Bat enemy
          {9.5, 5.5, 12, 5}  // Second bat enemy
     },
     {
          // Level two enemies
          {3, 2, IDLE, 1, 0, &wormProto}, // Snake
-         {3, 2, IDLE, 3, 0, &wormProto}, // Snake 2
+         {6, 2, IDLE, 3, 0, &slimeProto}, // Slime
          {4, 1, IDLE, 4, 0, &batProto},  // Bat
          {4, 1, IDLE, 5, 0, &batProto}   // Bat 2
     },
     8,
-    2.5}};
+    2},
+    { // Level three
+      { 
+      // Level 3 map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
+      {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+      {3, 0, 0, 0, 2, 0, 1, 1, 1, 3},
+      {3, 0, 0, 0, 0, 0, 2, 0, 0, 3},
+      {3, 1, 0, 1, 1, 1, 1, 0, 1, 3},
+      {3, 1, 0, 0, 0, 1, 0, 0, 0, 3},
+      {3, 0, 0, 1, 0, 1, 0, 1, 1, 3},
+      {3, 1, 0, 1, 0, 1, 0, 0, 1, 3},
+      {3, 0, 0, 1, 0, 1, 1, 0, 1, 3},
+      {3, 0, 0, 0, 0, 0, 0, 0, 1, 3},
+      {3, 3, 3, 3, 3, 3, 3, 3, 3, 3}},
+    {
+         // Level 3 sprites:
+         {5.5, 6.5, 13, 1},  // Slime enemy
+         {4.5, 7.5, 11, 2}, // Gem pickup
+         {1.5, 5.5, 13, 3},  // Second slime enemy
+         {7.5, 1.5, 12, 4}, // Bat enemy
+         {8.5, 5.5, 12, 5}  // Second bat enemy
+    },
+    {
+         // Level 3 enemies
+         {3, 2, IDLE, 1, 0, &wormProto}, // Snake
+         {3, 2, IDLE, 3, 0, &wormProto}, // Snake 2
+         {4, 1, IDLE, 4, 0, &batProto},  // Bat
+         {4, 1, IDLE, 5, 0, &batProto}   // Bat 2
+    },
+    2,
+    2
+    }
+  };
 
 // 1D Zbuffer
 double ZBuffer[screenWidth];
@@ -302,7 +335,7 @@ void load_music(struct music_t *music[numTracks])
   music[3] = loadmid("files/sound/game_over.mid");        // game over
 }
 
-int numSfx = 13;
+int numSfx = 17;
 int gemPickupSfx = 6;
 void load_sfx(struct sound_t *sfx[numSfx])
 {
@@ -319,6 +352,10 @@ void load_sfx(struct sound_t *sfx[numSfx])
   sfx[10] = loadwav("files/sound/bat_telegraph.wav");
   sfx[11] = loadwav("files/sound/bat_attack.wav");
   sfx[12] = loadwav("files/sound/bat_death.wav");
+  sfx[13] = loadwav("files/sound/slime_alert.wav");
+  sfx[14] = loadwav("files/sound/slime_telegraph.wav");
+  sfx[15] = loadwav("files/sound/slime_attack.wav");
+  sfx[16] = loadwav("files/sound/slime_death.wav");
 }
 
 void set_positions()
@@ -601,8 +638,6 @@ int main(int argc, char *argv[])
           // Check if ray has hit a wall
           if (levels[state.level].map[mapX][mapY] > 0)
             hit = 1;
-          
-          printf("Checking for wall hits on cast against map %d, %d: %d (%d)\n", mapX, mapY, hit, levels[state.level].map[mapX][mapY]);
         }
 
         // Calculate distance of perpendicular ray (Euclidean distance would give fisheye effect!)
