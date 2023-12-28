@@ -47,41 +47,44 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Zero (0) is the floor, and the rest are walls.
 // Texture for walls decided by subtracting 1 from the value.
 // 10 x 10 mazelike grid:
-int levelOneMap[mapWidth][mapHeight] = 
-  {   // Level one map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
-    {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
-    {3, 0, 0, 0, 2, 0, 1, 1, 1, 3},
-    {3, 0, 0, 0, 0, 0, 0, 0, 0, 3},
-    {3, 1, 0, 1, 1, 1, 1, 1, 1, 3},
-    {3, 1, 0, 0, 0, 1, 0, 0, 0, 3},
-    {3, 1, 0, 1, 0, 1, 0, 1, 1, 3},
-    {3, 1, 0, 1, 0, 1, 0, 0, 1, 3},
-    {3, 1, 0, 1, 0, 1, 1, 0, 1, 3},
-    {3, 1, 0, 0, 0, 0, 0, 0, 1, 3},
-    {3, 3, 3, 3, 3, 3, 3, 3, 3, 3}
-  };
+int levelOneMap[mapWidth][mapHeight] =
+    { // Level one map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
+        {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+        {3, 0, 0, 0, 2, 0, 1, 1, 1, 3},
+        {3, 0, 0, 0, 0, 0, 0, 0, 0, 3},
+        {3, 1, 0, 1, 1, 1, 1, 1, 1, 3},
+        {3, 1, 0, 0, 0, 1, 0, 0, 0, 3},
+        {3, 1, 0, 1, 0, 1, 0, 1, 1, 3},
+        {3, 1, 0, 1, 0, 1, 0, 0, 1, 3},
+        {3, 1, 0, 1, 0, 1, 1, 0, 1, 3},
+        {3, 1, 0, 0, 0, 0, 0, 0, 1, 3},
+        {3, 3, 3, 3, 3, 3, 3, 3, 3, 3}};
 
-int levelTwoMap[mapWidth][mapHeight] = 
-  {   // Level two map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
-    {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
-    {3, 0, 0, 0, 0, 1, 0, 0, 0, 3},
-    {3, 0, 2, 2, 0, 1, 0, 2, 0, 3},
-    {3, 0, 2, 2, 0, 0, 0, 0, 0, 3},
-    {3, 0, 0, 0, 0, 1, 0, 1, 0, 3},
-    {3, 0, 1, 1, 0, 1, 0, 1, 0, 3},
-    {3, 0, 1, 1, 0, 1, 0, 1, 0, 3},
-    {3, 0, 0, 0, 0, 1, 0, 1, 0, 3},
-    {3, 0, 2, 2, 0, 0, 0, 0, 0, 3},
-    {3, 0, 0, 2, 0, 1, 0, 1, 0, 3}
-    {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
-  };
+int levelTwoMap[mapWidth][mapHeight] =
+    {
+        // Level two map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
+        {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+        {3, 0, 0, 0, 0, 1, 0, 0, 0, 3},
+        {3, 0, 2, 2, 0, 1, 0, 2, 0, 3},
+        {3, 0, 2, 2, 0, 0, 0, 0, 0, 3},
+        {3, 0, 0, 0, 0, 1, 0, 1, 0, 3},
+        {3, 0, 1, 1, 0, 1, 0, 1, 0, 3},
+        {3, 0, 1, 1, 0, 1, 0, 1, 0, 3},
+        {3, 0, 0, 0, 0, 1, 0, 1, 0, 3},
+        {3, 0, 2, 2, 0, 0, 0, 0, 0, 3},
+        {3, 0, 0, 2, 0, 1, 0, 1, 0, 3}, 
+        {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+};
 
-int getWorldMap(currentLevel) {
-  if (currentLevel == 1) {
+int getWorldMap(currentLevel)
+{
+  if (currentLevel == 1)
+  {
     return levelOneMap;
   }
 
-  if (currentLevel == 2) {
+  if (currentLevel == 2)
+  {
     return levelTwoMap;
   }
   return levelOneMap;
@@ -149,19 +152,20 @@ typedef struct Sprite
 } Sprite;
 
 #define numSprites 5 // per level
-#define numLevels 2 // TODO: multi levels
+#define numLevels 2  // TODO: multi levels
 
 Sprite sprite[numLevels][numSprites] = {
-    { // Level one sprites:
+    {
+        // Level one sprites:
         {5.5, 6.5, 6, 1},  // Worm enemy
         {4.5, 7.5, 11, 2}, // Gem pickup
         {1.5, 5.5, 6, 3},  // Second worm enemy
-        {7.5, 1.5, 12, 4},  // Bat enemy
-        {8.5, 5.5, 12, 5}   // Second bat enemy
-    }, 
-    { // Level two sprites: 
-    }
-};
+        {7.5, 1.5, 12, 4}, // Bat enemy
+        {8.5, 5.5, 12, 5}  // Second bat enemy
+    },
+    {
+        // Level two sprites:
+    }};
 
 typedef struct Weapon
 {
@@ -191,7 +195,8 @@ typedef enum EnemyStateType
 } EnemyStateType;
 
 // Things that don't mutate or change per-instance of enemy of the same type:
-typedef struct EnemyPrototype {
+typedef struct EnemyPrototype
+{
   double movementRange; // moves to player when player in range, in tiles
   double movementSpeed; // how many frames to move 1 pixel
   double attackRange;   // attacks player when player in range, in tiles
@@ -213,22 +218,22 @@ typedef struct Enemy
   int health;
   int damage;
   EnemyStateType state;
-  int spriteId;         // used to grab this enemy's struct when iterating sprites, so the relationship is Sprite->Enemy
-  int cooldown;         // how long in frames until next action
-  EnemyPrototype* proto; // things that don't mutate or change per-instance of enemy of the same type
+  int spriteId;          // used to grab this enemy's struct when iterating sprites, so the relationship is Sprite->Enemy
+  int cooldown;          // how long in frames until next action
+  EnemyPrototype *proto; // things that don't mutate or change per-instance of enemy of the same type
 } Enemy;
-
 
 const int numEnemies = 4; // per level
 
-//TODO: Create a prototype system for less duplication of enemies attrs
-Enemy enemies[numLevels][numEnemies] = {  
-  { // Level one enemies
-    {3, 2, IDLE, 1, 0, &wormProto}, // Snake
-    {3, 2, IDLE, 3, 0, &wormProto}, // Snake 2
-    {4, 1, IDLE, 4, 0, &batProto}, // Bat
-    {4, 1, IDLE, 5, 0, &batProto} // Bat 2
-  } // Bat 2
+// TODO: Create a prototype system for less duplication of enemies attrs
+Enemy enemies[numLevels][numEnemies] = {
+    {
+        // Level one enemies
+        {3, 2, IDLE, 1, 0, &wormProto}, // Snake
+        {3, 2, IDLE, 3, 0, &wormProto}, // Snake 2
+        {4, 1, IDLE, 4, 0, &batProto},  // Bat
+        {4, 1, IDLE, 5, 0, &batProto}   // Bat 2
+    }                                   // Bat 2
 };
 
 // 1D Zbuffer
@@ -291,10 +296,10 @@ int numTracks = 4;
 void load_music(struct music_t *music[numTracks])
 {
   setsoundbank(DEFAULT_SOUNDBANK_SB16);
-  music[0] = loadmid("files/sound/meniskos_1.mid");  // menu
-  music[1] = loadmid("files/sound/meniskos_2c.mid"); // dungeon
-  music[2] = loadmid("files/sound/meniskos_victory.mid");  // win condition
-  music[3] = loadmid("files/sound/game_over.mid"); // game over
+  music[0] = loadmid("files/sound/meniskos_1.mid");       // menu
+  music[1] = loadmid("files/sound/meniskos_2c.mid");      // dungeon
+  music[2] = loadmid("files/sound/meniskos_victory.mid"); // win condition
+  music[3] = loadmid("files/sound/game_over.mid");        // game over
 }
 
 int numSfx = 13;
@@ -336,7 +341,7 @@ void set_positions()
 
 bool can_move_to(double posX, double posY)
 {
-  return worldMap[(int)(posX)][(int)(posY)] == false;
+  return getWorldMap(state.level)[(int)(posX)][(int)(posY)] == false;
 }
 
 bool has_enemy_sprite(double posX, double posY)
@@ -345,22 +350,27 @@ bool has_enemy_sprite(double posX, double posY)
   Sprite foundSprite = {-1, -1, -1, -1};
   int x = (int)(posX);
   int y = (int)(posY);
-  for (int i = 0; i < numSprites; i++) {
+  for (int i = 0; i < numSprites; i++)
+  {
     Sprite thisSprite = sprite[state.level][i];
-    if ((int)(thisSprite.x) == x && (int)(thisSprite.y) == y) {
+    if ((int)(thisSprite.x) == x && (int)(thisSprite.y) == y)
+    {
       foundSprite = thisSprite;
       break;
     }
   }
 
   // Short circuit if no sprite in coords:
-  if (foundSprite.id == -1) {
+  if (foundSprite.id == -1)
+  {
     return false;
   }
 
-  for (int i = 0; i < numEnemies; i++) {
+  for (int i = 0; i < numEnemies; i++)
+  {
     Enemy thisEnemy = enemies[state.level][i];
-    if (thisEnemy.spriteId == foundSprite.id && thisEnemy.state != DEAD) {
+    if (thisEnemy.spriteId == foundSprite.id && thisEnemy.state != DEAD)
+    {
       return true;
     }
   }
@@ -589,6 +599,7 @@ int main(int argc, char *argv[])
             side = 1;
           }
           // Check if ray has hit a wall
+          int worldMap[mapWidth][mapHeight] = getWorldMap(state.level);
           if (worldMap[mapX][mapY] > 0)
             hit = 1;
         }
@@ -610,6 +621,7 @@ int main(int argc, char *argv[])
         if (drawEnd >= h)
           drawEnd = h;
         // texturing calculations
+        int worldMap[mapWidth][mapHeight] = getWorldMap(state.level);
         int texNum = worldMap[mapX][mapY] - 1; // 1 subtracted from it so that texture 0 can be used!
 
         // calculate value of wallX
@@ -707,7 +719,8 @@ int main(int argc, char *argv[])
               enemySprite.y = enemySprite.y + yMovement;
 
             // Handle state transition
-            if (enemy.state == IDLE) {
+            if (enemy.state == IDLE)
+            {
               // Play alert sfx
               play_sfx(sfx, enemy.proto->alertSfx, LOW_VOLUME);
             }
@@ -745,13 +758,13 @@ int main(int argc, char *argv[])
             bool effectiveBlocking = state.playerstate == PLAYER_BLOCKING && state.stamina > 0;
             int healthDamage = effectiveBlocking ? enemy.damage / 2 : enemy.damage;
             int staminaDamage = effectiveBlocking ? 1 : 0;
-            if (effectiveBlocking) {
+            if (effectiveBlocking)
+            {
               state.staminaCooldown = 120;
             }
             state.health -= healthDamage;
             state.stamina -= staminaDamage;
             state.score -= healthDamage * 10;
-            
 
             if (state.health <= 0)
             {
@@ -759,7 +772,8 @@ int main(int argc, char *argv[])
               play_sfx(sfx, 9, MID_VOLUME);
               state.state = GAMEOVER;
               break;
-            } else 
+            }
+            else
             {
               play_sfx(sfx, 8, MID_VOLUME); // normal pain grunt
             }
@@ -924,7 +938,7 @@ int main(int argc, char *argv[])
           state.posX += state.dirX * moveSpeed;
         if (can_move_to(state.posX, yDest) && !has_enemy_sprite(state.posX, yDest))
           state.posY += state.dirY * moveSpeed;
-          state.staminaCooldown += 1;
+        state.staminaCooldown += 1;
       }
       // move backwards if no wall behind you
       if (keystate(KEY_DOWN))
