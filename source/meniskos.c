@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define mapWidth 10
 #define mapHeight 10
 
+//FIXME: No dynamic assignment/initialization outside of `main` fn. If this doesn't work, change any `const int` to `#define`. For TCC.
 /**
  * Paint palette
 */
@@ -57,8 +58,6 @@ const int WHITE = 7;
 const int GREY = 8;
 const int LAVENDER = 9;
 const int GREEN = 10;
-
-// paint pixel colors, 0 = ???, 1 = green, 2 = light blue, 3 = (???), 4 = red, 5 = fuchsia, 6 = orange, 7 = white
 
 /**
  * State enums
@@ -81,7 +80,7 @@ typedef enum PlayerStateType
 } PlayerStateType;
 
 /**
- * Game and entity state structs
+ * Game and entity state structs and constants
  */
 typedef struct GameState
 {
@@ -130,8 +129,11 @@ typedef struct Sprite
 } Sprite;
 
 #define numSprites 5 // per level
-#define numLevels 3  // TODO: multi levels
+#define numLevels 3
 
+/**
+  * Weapon struct and constants
+  */
 typedef struct Weapon
 {
   int texture;
@@ -147,9 +149,14 @@ typedef struct Weapon
 
 int weaponAnimCooldown = 12; // frames
 
-Weapon weapon[1] = {
-    {8, 9, 1, 1, 0, 0, 0.5, 0, 1} // sword
+Weapon weapon[1];
+void initWeapons() {
+  weapon[0] = (struct Weapon){8, 9, 1, 1, 0, 0, 0.5, 0, 1}; // sword
 };
+
+/**
+  * Enemy structs and constants
+  */
 
 typedef enum EnemyStateType
 {
@@ -197,6 +204,9 @@ typedef struct Enemy
 
 const int numEnemies = 4; // per level
 
+/**
+ * Level structs and constants
+ */
 typedef struct Level
 {
   int map[mapWidth][mapHeight];
@@ -332,13 +342,15 @@ void sortSprites(int *order, double *dist, int amount);
 double dmax(double a, double b) { return a > b ? a : b; }
 double dmin(double a, double b) { return a < b ? a : b; }
 
-// constant indexes for textures
-int floor1 = 3;
-int floor2 = 4;
-int ceilingTexture = 5;
-int numTextures = 15;
-int deadEnemyTexture = 10;
-int gemTexture = 11;
+// Constant indexes for textures
+const int floor1 = 3;
+const int floor2 = 4;
+const int ceilingTexture = 5;
+const int numTextures = 15;
+const int deadEnemyTexture = 10;
+const int gemTexture = 11;
+
+//TODO: Should be moved to state?
 bool gemPickedUp = false;
 
 void set_textures(uint8_t *texture[numTextures], int tw, int th, int palcount, uint8_t palette[768])
@@ -375,7 +387,7 @@ void set_textures(uint8_t *texture[numTextures], int tw, int th, int palcount, u
 }
 
 // TODO: associate tracks with levels?
-int numTracks = 4;
+const int numTracks = 4;
 void load_music(struct music_t *music[numTracks])
 {
   setsoundbank(DEFAULT_SOUNDBANK_SB16);
@@ -385,8 +397,8 @@ void load_music(struct music_t *music[numTracks])
   music[3] = loadmid("files/sound/game_over.mid");        // game over
 }
 
-int numSfx = 17;
-int gemPickupSfx = 6;
+const int numSfx = 17;
+const int gemPickupSfx = 6;
 void load_sfx(struct sound_t *sfx[numSfx])
 {
   sfx[0] = loadwav("files/sound/sword_hit.wav");
@@ -465,10 +477,10 @@ bool has_enemy_sprite(double posX, double posY)
   return false;
 }
 
-int LOW_VOLUME = 12;
-int MID_VOLUME = 24;
-int HIGH_VOLUME = 48;
-int currentChannel = 0;
+const int LOW_VOLUME = 12;
+const int MID_VOLUME = 24;
+const int HIGH_VOLUME = 48;
+int currentChannel = 0; //TODO: Move to state?
 const int maxChannel = 15;
 void play_sfx(struct sound_t *sfx[numSfx], int trackIdx, int volume)
 {
@@ -491,14 +503,14 @@ void play_track(struct music_t *music[numTracks], int trackIdx)
 int main(int argc, char *argv[])
 {
   (void)argc, (void)argv;
-  // Handle all init here:
-  initState();
-  initEnemyProtos();
-  initLevels();
   /**
    * Start init code that is ran once on game start:
    */
-  set_positions();
+  initState();
+  initEnemyProtos();
+  initLevels();
+  initWeapons();
+  set_positions(); //TODO: Standardize on camelCase or not?
 
   // Setup video mode
   setvideomode(videomode_320x200);
