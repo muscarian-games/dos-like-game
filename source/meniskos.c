@@ -120,6 +120,9 @@ typedef struct Sprite
   int texture;
   int id;
   int color;
+  // Saved later, not initialized at first:
+  double startX;
+  double startY;
 } Sprite;
 
 #define numSprites 5 // per level
@@ -168,8 +171,8 @@ typedef struct EnemyPrototype
   int deathSfx;
 } EnemyPrototype;
 
-EnemyPrototype wormProto = {2, 40, 1, 2, 1, 6, 7, 2, 3, 4, 5};
-EnemyPrototype batProto = {2, 60, 1, 2, 1, 12, 13, 9, 10, 11, 12};
+EnemyPrototype wormProto = {3, 20, 1, 2, 1, 6, 7, 2, 3, 4, 5};
+EnemyPrototype batProto = {6, 40, 1, 2, 1, 12, 13, 9, 10, 11, 12};
 EnemyPrototype slimeProto = {4, 30, 2, 2, 2, 14, 15, 13, 14, 15, 16};
 
 typedef struct Enemy
@@ -214,7 +217,7 @@ Level levels[numLevels] = {
          {4.5, 7, 11, 2, LIGHT_BLUE}, // Gem pickup
          {1.5, 5, 6, 3, GREEN},  // Second worm enemy
          {2.5, 7.5, 12, 4, RED}, // Bat enemy
-         {8, 5, 12, 5, RED}  // Second bat enemy
+         {6.5, 4.5, 12, 5, RED}  // Second bat enemy
     },
     {
          // Level one enemies
@@ -224,15 +227,15 @@ Level levels[numLevels] = {
          {4, 1, IDLE, 5, 0, &batProto}   // Bat 2
     },
     // Level 1 starting cords are ignored at the moment. Other levels use them.
-    1,
-    1,
+    4,
+    2,
     BLUE,
     ORANGE,
     GREY
     },
     {// Level two
       {
-        // Level two map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
+        // Level 2 map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
         {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
         {3, 0, 0, 0, 0, 1, 0, 0, 0, 3},
         {3, 0, 2, 2, 0, 1, 0, 2, 0, 3},
@@ -248,9 +251,9 @@ Level levels[numLevels] = {
          // Level two sprites:
          {1.5, 1.5, 6, 1, GREEN},  // Worm enemy
          {8.5, 1.5, 11, 2, LIGHT_BLUE}, // Gem pickup
-         {6.5, 9.5, 14, 3, FUCHSIA},  // Slime enemy
+         {4.5, 4.5, 14, 3, FUCHSIA},  // Slime enemy
          {1.5, 7.5, 12, 4, RED}, // Bat enemy
-         {9.5, 5.5, 12, 5, RED}  // Second bat enemy
+         {8.5, 4.5, 12, 5, RED}  // Second bat enemy
     },
     {
          // Level two enemies
@@ -296,7 +299,7 @@ Level levels[numLevels] = {
     2,
     2,
     GREY,
-  GREEN,
+    GREEN,
     BLUE
     }
   };
@@ -855,13 +858,13 @@ int main(int argc, char *argv[])
             if (state.health <= 0)
             {
               // Play death SFX;
-              play_sfx(sfx, 9, MID_VOLUME);
+              play_sfx(sfx, 8, MID_VOLUME);
               state.state = GAMEOVER;
               break;
             }
             else
             {
-              play_sfx(sfx, 8, MID_VOLUME); // normal pain grunt
+              play_sfx(sfx, 7, MID_VOLUME); // normal pain grunt
             }
 
             // Set state back to idle after attack completes:
@@ -1092,23 +1095,31 @@ int main(int argc, char *argv[])
             }
             else
             {
-              for (int j = 0; j < numSprites; j++)
-              {
-                Sprite thisSprite = levels[state.level].sprites[j];
-                {
-                  levels[state.level].sprites[j].x = -1;
-                  levels[state.level].sprites[j].y = -1;
-                }
-              }
               for (int j = 0; j < numEnemies; j++)
               {
                 Enemy thisEnemy = levels[state.level].enemies[j];
                 {
-                  levels[state.level].enemies[j].spriteId = -1;
                   levels[state.level].enemies[j].state = DEAD;
                 }
               }
               state.level += 1;
+
+              for (int j = 0; j < numEnemies; j++)
+              {
+                Enemy thisEnemy = levels[state.level].enemies[j];
+                {
+                  levels[state.level].enemies[j].state = IDLE;
+                }
+              }
+              for (int j = 0; j < numSprites; j++)
+              {
+                Sprite thisSprite = levels[state.level].sprites[j];
+                {
+                  // Save start x/y in case of restart:
+                  levels[state.level].sprites[j].startX = thisSprite.x;
+                  levels[state.level].sprites[j].startY = thisSprite.y;
+                }
+              }
               state.posX = levels[state.level].startX;
               state.posY = levels[state.level].startY;
               state.posZ = 0.0;
@@ -1249,10 +1260,44 @@ int main(int argc, char *argv[])
       centertextxy(12, 24, "You died.", centerWidth);
       centertextxy(12, 36, "Thanks for playing the Demo of", centerWidth);
       centertextxy(12, 48, "Trials of Meniskos", centerWidth);
-      centertextxy(12, 82, "Press Enter to Restart", centerWidth);
+      // centertextxy(12, 82, "Press Enter to Restart", centerWidth);
       centertextxy(12, 104, "Press Escape to Quit", centerWidth);
       buffer = swapbuffers();
       play_track(music, 3);
+
+      //FIXME: Does not work, sprites/enemies are gone:
+      // if (keystate(KEY_RETURN))
+      // {
+      //   state.state = PLAYING;
+      //   state.level = 0;
+      //   state.posX = levels[state.level].startX;
+      //   state.posY = levels[state.level].startY;
+      //   state.posZ = 0.0;
+      //   state.pitch = 0.0;
+      //   state.health = maxHealth;
+      //   state.stamina = maxStamina;
+      //   state.staminaCooldown = 120;
+      //   state.playerstate = PLAYER_NORMAL;
+      //   gemPickedUp = false;
+      //   for (int j = 0; j < numSprites; j++)
+      //   {
+      //     Sprite thisSprite = levels[state.level].sprites[j];
+      //     {
+      //       levels[state.level].sprites[j].x = levels[state.level].sprites[j].startX;
+      //       levels[state.level].sprites[j].y = levels[state.level].sprites[j].startY;
+      //     }
+      //   }
+      //   for (int j = 0; j < numEnemies; j++)
+      //   {
+      //     {
+      //       levels[state.level].enemies[j].state = IDLE;
+      //     }
+      //   }
+      // }
+      // if (keystate(KEY_ESCAPE))
+      // {
+      //   break;
+      // }
     }
     else if (state.state == WIN)
     {
