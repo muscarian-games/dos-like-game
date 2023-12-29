@@ -112,7 +112,7 @@ const int maxHealth = 10;
 const int maxStamina = 5;
 const int initTrack = -1;
 GameState state = {startingState, PLAYER_NORMAL, startingLevel, 0, maxHealth, maxStamina, initTrack, 0};
-
+int framesSinceStart = 0;
 typedef struct Sprite
 {
   double x;
@@ -1003,6 +1003,13 @@ int main(int argc, char *argv[])
       snprintf(scoreString, 12, "SCORE: %d", state.score);
       centertextxy(12, 36, scoreString, 100);
 
+      if (framesSinceStart < 360) {
+        centertextxy(0, 48, "Use arrow keys to move", screenWidth);
+        centertextxy(0, 60, "Press space to attack", screenWidth);
+        centertextxy(0, 72, "Press shift to block", screenWidth);
+        centertextxy(0, 84, "Find the Crystallium Gems", screenWidth);
+      }
+
       buffer = swapbuffers();
       // No need to clear the screen here, since everything is overdrawn with floor and ceiling
 
@@ -1058,6 +1065,12 @@ int main(int argc, char *argv[])
         double oldPlaneX = state.planeX;
         state.planeX = state.planeX * cos(rotSpeed) - state.planeY * sin(rotSpeed);
         state.planeY = oldPlaneX * sin(rotSpeed) + state.planeY * cos(rotSpeed);
+      }
+
+      // Handle tutorial text cooldown:
+      if (framesSinceStart < 360)
+      {
+        framesSinceStart += 1;
       }
 
       // Handle gem pickups:
