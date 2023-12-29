@@ -171,9 +171,9 @@ typedef struct EnemyPrototype
   int deathSfx;
 } EnemyPrototype;
 
-EnemyPrototype wormProto = {3, 20, 1, 2, 1, 6, 7, 2, 3, 4, 5};
-EnemyPrototype batProto = {6, 40, 1, 2, 1, 12, 13, 9, 10, 11, 12};
-EnemyPrototype slimeProto = {4, 30, 2, 2, 2, 14, 15, 13, 14, 15, 16};
+EnemyPrototype wormProto = {2, 30, 1, 2, 1, 6, 7, 2, 3, 4, 5};
+EnemyPrototype batProto = {4, 40, 1, 2, 1, 12, 13, 9, 10, 11, 12};
+EnemyPrototype slimeProto = {3, 20, 2, 2, 2, 14, 15, 13, 14, 15, 16};
 
 typedef struct Enemy
 {
@@ -217,7 +217,7 @@ Level levels[numLevels] = {
          {4.5, 7, 11, 2, LIGHT_BLUE}, // Gem pickup
          {1.5, 5, 6, 3, GREEN},  // Second worm enemy
          {2.5, 7.5, 12, 4, RED}, // Bat enemy
-         {6.5, 4.5, 12, 5, RED}  // Second bat enemy
+         {5.5, 4.5, 12, 5, RED}  // Second bat enemy
     },
     {
          // Level one enemies
@@ -227,7 +227,7 @@ Level levels[numLevels] = {
          {4, 1, IDLE, 5, 0, &batProto}   // Bat 2
     },
     // Level 1 starting cords are ignored at the moment. Other levels use them.
-    4,
+    3,
     2,
     BLUE,
     ORANGE,
@@ -401,7 +401,7 @@ void set_positions()
   // pitch = 0; // looking up/down, expressed in screen pixels the horizon shifts
   // posZ = 0; // vertical camera strafing up/down, for jumping/crouching. 0 means standard height. Expressed in screen pixels a wall at distance 1 shifts
   // Rewrite the above but use the game state positioning:
-  state.posX = 4.0;
+  state.posX = 3.0;
   state.posY = 2.5;
   state.dirX = -1.0;
   state.dirY = 0.0;
