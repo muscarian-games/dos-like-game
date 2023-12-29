@@ -111,7 +111,11 @@ const int startingLevel = 0;
 const int maxHealth = 10;
 const int maxStamina = 5;
 const int initTrack = -1;
-GameState state = {startingState, PLAYER_NORMAL, startingLevel, 0, maxHealth, maxStamina, initTrack, 0};
+GameState state;
+void initState() {
+  state = (struct GameState){startingState, PLAYER_NORMAL, startingLevel, 0, maxHealth, maxStamina, initTrack, 0};
+}
+
 int framesSinceStart = 0;
 typedef struct Sprite
 {
@@ -171,9 +175,15 @@ typedef struct EnemyPrototype
   int deathSfx;
 } EnemyPrototype;
 
-EnemyPrototype wormProto = {2, 30, 1, 2, 1, 6, 7, 2, 3, 4, 5};
-EnemyPrototype batProto = {4, 40, 1, 2, 1, 12, 13, 9, 10, 11, 12};
-EnemyPrototype slimeProto = {3, 20, 2, 2, 2, 14, 15, 13, 14, 15, 16};
+EnemyPrototype wormProto;
+EnemyPrototype batProto;
+EnemyPrototype slimeProto;
+
+void initEnemyProtos() {
+  wormProto = (struct EnemyPrototype){2, 30, 1, 2, 1, 6, 7, 2, 3, 4, 5};
+  batProto = (struct EnemyPrototype){4, 40, 1, 2, 1, 12, 13, 9, 10, 11, 12};
+  slimeProto = (struct EnemyPrototype){3, 20, 2, 2, 2, 14, 15, 13, 14, 15, 16};
+}
 
 typedef struct Enemy
 {
@@ -201,7 +211,7 @@ typedef struct Level
 
 Level levels[numLevels];
 
-void setLevels() {
+void initLevels() {
   levels[0] = (struct Level){
     {// Level one map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
       {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
@@ -481,8 +491,10 @@ void play_track(struct music_t *music[numTracks], int trackIdx)
 int main(int argc, char *argv[])
 {
   (void)argc, (void)argv;
-  // TODO: Allow position to be set from level data
-
+  // Handle all init here:
+  initState();
+  initEnemyProtos();
+  initLevels();
   /**
    * Start init code that is ran once on game start:
    */
