@@ -199,8 +199,11 @@ typedef struct Level
   int ceilingColor;
 } Level;
 
-Level levels[numLevels] = {
-    {{// Level one map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
+Level levels[numLevels];
+
+void setLevels() {
+  levels[0] = (struct Level){
+    {// Level one map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
       {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
       {3, 0, 0, 0, 2, 0, 1, 1, 1, 3},
       {3, 0, 0, 0, 0, 0, 0, 0, 0, 3},
@@ -232,9 +235,10 @@ Level levels[numLevels] = {
     BLUE,
     ORANGE,
     GREY
-    },
-    {// Level two
-      {
+  };
+    
+  levels[1] = (struct Level){
+    {
         // Level 2 map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
         {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
         {3, 0, 0, 0, 0, 1, 0, 0, 0, 3},
@@ -267,8 +271,9 @@ Level levels[numLevels] = {
     LAVENDER,
     ORANGE,
     GREY
-    },
-    { // Level three
+  };
+
+  levels[2] = (struct Level){ // Level three
       { 
       // Level 3 map: (3 = outer wall, 2 and 1 are inner walls, 0 is floor/empty)
       {3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
@@ -301,8 +306,8 @@ Level levels[numLevels] = {
     GREY,
     GREEN,
     BLUE
-    }
   };
+}
 
 // 1D Zbuffer
 double ZBuffer[screenWidth];
