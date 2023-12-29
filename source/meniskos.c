@@ -611,7 +611,6 @@ int main(int argc, char *argv[])
       // which box of the map we're in
       int mapX = (int)(state.posX);
       int mapY = (int)(state.posY);
-      printf("We are in box %d, %d\n", mapX, mapY);
 
       // now WALL CASTING algo
       for (int x = 0; x < w; x++)
@@ -744,7 +743,6 @@ int main(int argc, char *argv[])
         ZBuffer[x] = perpWallDist; // perpendicular distance is used
       }
 
-      printf("Handling enemy movement/attack");
       // HANDLE ENEMY MOVEMENT/ATTACK
       for (int i = 0; i < numEnemies; i++)
       {
@@ -755,7 +753,6 @@ int main(int argc, char *argv[])
         if (enemy.state == DEAD)
           continue;
 
-        printf("Enemy alive, sprite id is %d\n", enemy.spriteId);
         // Ensure we have grabbed the correct sprite (sprite data contains location data too):
         int spriteId = enemy.spriteId;
         int spriteIndex = 0;
@@ -792,7 +789,6 @@ int main(int argc, char *argv[])
           // Enemy sprites move to player if player within movementRange but not within attackRange:
           if (distanceToPlayer <= enemy.proto->movementRange && distanceToPlayer > enemy.proto->attackRange)
           {
-            printf("Moving enemy towards player");
             // Move enemy towards player
             double moveDir = atan2(state.posY - enemySprite.y, state.posX - enemySprite.x);
             double speedPerFrame = enemy.proto->movementSpeed / 60.0; // 60 fps
@@ -816,12 +812,10 @@ int main(int argc, char *argv[])
           else
           {
             enemy.state = IDLE;
-            printf("Enemy resumed idling");
           }
 
           if (enemy.state == IDLE && distanceToPlayer <= enemy.proto->attackRange && enemy.cooldown <= 0)
           {
-            printf("Enemy attacking player");
             // Enemy is in range to attack player, so start attack telegraph
             play_sfx(sfx, enemy.proto->telegraphSfx, LOW_VOLUME);
             enemy.state = ATTACKING;
@@ -1264,40 +1258,6 @@ int main(int argc, char *argv[])
       centertextxy(12, 104, "Press Escape to Quit", centerWidth);
       buffer = swapbuffers();
       play_track(music, 3);
-
-      //FIXME: Does not work, sprites/enemies are gone:
-      // if (keystate(KEY_RETURN))
-      // {
-      //   state.state = PLAYING;
-      //   state.level = 0;
-      //   state.posX = levels[state.level].startX;
-      //   state.posY = levels[state.level].startY;
-      //   state.posZ = 0.0;
-      //   state.pitch = 0.0;
-      //   state.health = maxHealth;
-      //   state.stamina = maxStamina;
-      //   state.staminaCooldown = 120;
-      //   state.playerstate = PLAYER_NORMAL;
-      //   gemPickedUp = false;
-      //   for (int j = 0; j < numSprites; j++)
-      //   {
-      //     Sprite thisSprite = levels[state.level].sprites[j];
-      //     {
-      //       levels[state.level].sprites[j].x = levels[state.level].sprites[j].startX;
-      //       levels[state.level].sprites[j].y = levels[state.level].sprites[j].startY;
-      //     }
-      //   }
-      //   for (int j = 0; j < numEnemies; j++)
-      //   {
-      //     {
-      //       levels[state.level].enemies[j].state = IDLE;
-      //     }
-      //   }
-      // }
-      // if (keystate(KEY_ESCAPE))
-      // {
-      //   break;
-      // }
     }
     else if (state.state == WIN)
     {
