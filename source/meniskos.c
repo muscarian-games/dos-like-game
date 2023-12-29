@@ -213,7 +213,7 @@ Level levels[numLevels] = {
          {5.5, 6, 6, 1, GREEN},  // Worm enemy
          {4.5, 7, 11, 2, LIGHT_BLUE}, // Gem pickup
          {1.5, 5, 6, 3, GREEN},  // Second worm enemy
-         {7.5, 1, 12, 4, RED}, // Bat enemy
+         {2.5, 7.5, 12, 4, RED}, // Bat enemy
          {8, 5, 12, 5, RED}  // Second bat enemy
     },
     {
@@ -280,7 +280,7 @@ Level levels[numLevels] = {
       {3, 3, 3, 3, 3, 3, 3, 3, 3, 3}},
     {
          // Level 3 sprites:
-         {5.5, 7.5, 14, 1, FUCHSIA},  // Slime enemy
+         {4.5, 8.5, 14, 1, FUCHSIA},  // Slime enemy
          {8.5, 8.5, 11, 2, LIGHT_BLUE}, // Gem pickup
          {2.5, 5.5, 14, 3, FUCHSIA},  // Second slime enemy
          {7.5, 1.5, 12, 4, RED}, // Bat enemy
