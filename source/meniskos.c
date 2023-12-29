@@ -1232,7 +1232,12 @@ int main(int argc, char *argv[])
       static char scoreString[32];
       snprintf(scoreString, 12, "SCORE: %d", state.score);
       centertextxy(12, 12, scoreString, 100);
-      centertextxy(12, 24, "You died.", 100);
+      int centerWidth = screenWidth - 12;
+      centertextxy(12, 24, "You died.", centerWidth);
+      centertextxy(12, 36, "Thanks for playing the Demo of", centerWidth);
+      centertextxy(12, 48, "Trials of Meniskos", centerWidth);
+      centertextxy(12, 82, "Press Enter to Restart", centerWidth);
+      centertextxy(12, 104, "Press Escape to Quit", centerWidth);
       buffer = swapbuffers();
       play_track(music, 3);
     }
@@ -1245,7 +1250,15 @@ int main(int argc, char *argv[])
       static char scoreString[32];
       snprintf(scoreString, 12, "SCORE: %d", state.score);
       centertextxy(12, 12, scoreString, 100);
-      centertextxy(12, 24, "You win!", 100);
+      int centerWidth = screenWidth - 12;
+      centertextxy(12, 24, "You win!", centerWidth);
+      centertextxy(12, 36, "Thanks for playing the Demo of", centerWidth);
+      centertextxy(12, 48, "Trials of Meniskos", centerWidth);
+
+      centertextxy(12, 72, "Stay tuned for the Full Version", centerWidth);
+      centertextxy(12, 84, "Coming Soon!", centerWidth);
+
+      centertextxy(12, 108, "Press Escape to Quit", centerWidth);
       buffer = swapbuffers();
     }
 
