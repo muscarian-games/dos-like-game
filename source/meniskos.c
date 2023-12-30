@@ -239,7 +239,7 @@ void initLevels() {
          {5.5, 6, 6, 1, GREEN},  // Worm enemy
          {4.5, 7, 11, 2, LIGHT_BLUE}, // Gem pickup
          {1.5, 5, 6, 3, GREEN},  // Second worm enemy
-         {2.5, 7.5, 12, 4, RED}, // Bat enemy
+         {2.5, 8, 12, 4, RED}, // Bat enemy
          {5.5, 4.5, 12, 5, RED}  // Second bat enemy
     },
     {
@@ -252,7 +252,7 @@ void initLevels() {
     // Level 1 starting cords are ignored at the moment. Other levels use them.
     3,
     2,
-    BLUE,
+    BLUE + 1,
     ORANGE,
     GREY
   };
@@ -428,8 +428,8 @@ void set_positions()
   // pitch = 0; // looking up/down, expressed in screen pixels the horizon shifts
   // posZ = 0; // vertical camera strafing up/down, for jumping/crouching. 0 means standard height. Expressed in screen pixels a wall at distance 1 shifts
   // Rewrite the above but use the game state positioning:
-  state.posX = 3.0;
-  state.posY = 2.5;
+  state.posX = 1.5;
+  state.posY = 1.5;
   state.dirX = -1.0;
   state.dirY = 0.0;
   state.planeX = 0.0;
